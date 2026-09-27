@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#050506"><meta name="description" content="JESSIE LIFE OS — autonomous personal study and life operating system">
+<link rel="manifest" href="manifest.json"><title>JESSIE LIFE OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="ambient a1"></div><div class="ambient a2"></div><div class="grain"></div>
+<div id="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">J</div><div><b>JESSIE</b><small>LIFE OS</small></div></div>
+  <div class="philosophy">THE USER SETS THE DIRECTION.<br><strong>JESSIE MANAGES THE NEXT STEP.</strong></div>
+  <nav id="nav">
+    <button data-view="dashboard" class="active"><span>◈</span>Command Center</button>
+    <button data-view="study"><span>◉</span>Study Mode</button>
+    <button data-view="tasks"><span>✓</span>Today's Tasks</button>
+    <button data-view="roadmap"><span>◇</span>Roadmap</button>
+    <button data-view="library"><span>▣</span>JESSIE Library</button>
+    <button data-view="progress"><span>↗</span>Progress</button>
+    <button data-view="settings"><span>⚙</span>Settings</button>
+  </nav>
+  <div class="sidebar-foot"><div class="live"><i></i>LOCAL SYSTEM ONLINE</div><div class="side-streak"><small>STREAK</small><b id="sideStreak">0</b><em>days</em></div></div>
+</aside>
+<main class="main">
+<header class="topbar"><div class="top-left"><button id="mobileMenu" class="icon">☰</button><div><small id="dateLabel"></small><h1 id="pageTitle">Command Center</h1></div></div><div class="top-actions"><button id="voiceBtn" class="icon" title="Voice">◌</button><button id="soundBtn" class="icon" title="Sound">♫</button><button id="quickStart" class="primary small">START STUDY</button></div></header>
+<section id="view"></section>
+</main></div>
+<div id="toast" class="toast"></div>
+<div id="overlay" class="overlay hidden"><div id="overlayCard" class="overlay-card"></div></div>
+<script src="app.js"></script>
+</body></html>
