@@ -145,7 +145,14 @@ function systemHealth(){return [["FINANCE",lifeGoalPct(LIFE_GOALS.find(g=>g.id==
 function monthlyReview(){const p=today().slice(0,7),completedCount=state.tasks.filter(t=>t.completionDate?.startsWith(p)).length+state.lifeTasks.filter(t=>t.completionDate?.startsWith(p)).length,minutes=state.sessions.filter(x=>x.date?.startsWith(p)).reduce((a,b)=>a+b.duration,0),stalled=LIFE_GOALS.filter(g=>lifeGoalPct(g)===0).slice(0,4);return{completedCount,minutes,stalled}}
 function dailyBriefingHTML(){const m=missionOfDay(),health=systemHealth(),r=monthlyReview();return '<div class="jessie-briefing"><div class="briefing-top"><div><div class="eyebrow">JESSIE DAILY BRIEFING</div><h2>SYSTEM STATUS: <span>STABLE</span></h2><p>JESSIE scanned your current goals and selected the next meaningful move.</p></div><div class="briefing-state"><b>'+esc(jessieEvolutionLabel())+'</b><small>JESSIE EVOLUTION</small></div></div><div class="briefing-grid"><div class="briefing-mission"><small>MISSION OF THE DAY</small><b>'+esc(m.title)+'</b><span>'+esc(m.detail)+'</span><em>'+m.minutes+' MIN · '+esc(m.type)+'</em><button class="primary" onclick="'+m.action+'">START MISSION →</button></div><div class="briefing-scan"><small>SYSTEM SCAN</small>'+health.map(x=>'<div class="scan-row"><span>'+esc(x[0])+'</span><i><b style="width:'+Math.min(100,Math.max(4,x[1]))+'%"></b></i><em>'+Math.round(x[1])+'%</em></div>').join("")+'</div><div class="briefing-stats"><div><small>STREAK</small><b>'+currentStreak()+' DAYS</b></div><div><small>THIS MONTH</small><b>'+r.completedCount+' ACTIONS</b></div><div><small>STUDY TIME</small><b>'+Math.round(r.minutes/60*10)/10+' H</b></div></div></div></div>'}
 function openMonthlyReview(){const r=monthlyReview();showOverlay('<button class="overlay-close" onclick="closeOverlay()">×</button><div class="eyebrow">JESSIE MONTHLY REVIEW</div><h2>SYSTEM REVIEW</h2><div class="grid g3" style="margin:18px 0"><div class="mini-card"><small>ACTIONS</small><b>'+r.completedCount+'</b><span>completed this month</span></div><div class="mini-card"><small>STUDY TIME</small><b>'+Math.round(r.minutes/60*10)/10+' H</b><span>recorded focus</span></div><div class="mini-card"><small>JESSIE STATE</small><b>'+esc(jessieEvolutionLabel())+'</b><span>'+overallPct()+'% marketing</span></div></div><div class="section-head"><h3>Needs attention</h3><span>SYSTEM SIGNAL</span></div><div class="card">'+(r.stalled.length?r.stalled.map(g=>'<div class="milestone"><div class="dot">!</div><div><b>'+esc(g.title)+'</b><small>No tracked progress yet — choose one small next action.</small></div></div>').join(""):'<p style="color:var(--muted)">No zero-progress goal signals detected.</p>')+'</div><button class="primary" onclick="closeOverlay()">CONTINUE →</button>')}
-function showBootSequence(){if(sessionStorage.getItem("jessieBootV1"))return;sessionStorage.setItem("jessieBootV1","1");const overlay=document.getElementById("overlay"),card=document.getElementById("overlayCard");if(!overlay||!card)return;card.innerHTML='<div class="jessie-boot"><div class="boot-orbit"></div><div class="boot-core">J</div><div class="eyebrow">JESSIE LIFE OS</div><h2>SYSTEM BOOT</h2><p>SCANNING LIFE SYSTEM...</p><div class="boot-lines"><span>FINANCE</span><span>EDUCATION</span><span>LANGUAGES</span><span>PROJECTS</span><span>AI / TECH</span></div><b>PRIORITY DETECTED</b></div>';overlay.classList.remove("hidden");setTimeout(()=>{overlay.classList.add("hidden");render("dashboard")},2200)}
+function showBootSequence(){
+ const overlay=document.getElementById("overlay"),card=document.getElementById("overlayCard");
+ if(!overlay||!card)return;
+ if(sessionStorage.getItem("jessieBootV2")){render("dashboard");return;}
+ card.innerHTML='<div class="jessie-boot jessie-boot-v2"><div class="boot-orbit"></div><div class="boot-core">J</div><div class="eyebrow">JESSIE LIFE OS</div><h2>SYSTEM BOOT</h2><p>ALL SYSTEMS READY · AWAITING USER COMMAND</p><div class="boot-lines"><span>FINANCE</span><span>EDUCATION</span><span>LANGUAGES</span><span>PROJECTS</span><span>AI / TECH</span></div><div class="boot-music"><div class="boot-music-label">SYSTEM AUDIO · I DANCE TO FORGET</div><div id="jessie-youtube-player" class="boot-youtube"></div><button class="primary boot-enter" onclick="enterJessieSystem()">ENTER SYSTEM · PLAY MUSIC →</button><button id="jessie-music-retry" class="ghost boot-retry" hidden onclick="retrySystemMusic()">RETRY AUDIO</button></div><small class="boot-note">Click once to unlock audio playback in your browser.</small></div>';
+ overlay.classList.remove("hidden");
+ prepareSystemMusic();
+}
 
 const V={
 dashboard(){ensureDaily();const tasks=todayTasks(),done=todayDone(),next=adaptiveNextTask()||nextTask(),mission=missionOfDay();
@@ -271,27 +278,76 @@ function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
 }
 
 
-function startSystemMusic(userGesture=false){
- const id="jessie-system-music";
- let f=document.getElementById(id);
- if(!f){
-  f=document.createElement("iframe");
-  f.id=id;
-  f.title="JESSIE System Music";
-  f.width="200";f.height="200";
-  f.allow="autoplay; encrypted-media; fullscreen";
-  f.setAttribute("aria-hidden","true");
-  f.style.cssText="position:fixed;width:200px;height:200px;left:-220px;top:-220px;border:0;opacity:0;pointer-events:none";
-  document.body.appendChild(f);
- }
- const origin=encodeURIComponent(location.origin);
- const src="https://www.youtube.com/embed/_IetZZgzbPo?autoplay=1&loop=1&playlist=_IetZZgzbPo&playsinline=1&rel=0&controls=0&enablejsapi=1&origin="+origin;
- if(userGesture||!f.src||!f.src.includes("_IetZZgzbPo"))f.src=src;
+let jessieYT=null;
+let jessieYTReady=false;
+let jessieMusicPending=false;
+
+function loadJessieYouTubeAPI(){
+ if(window.YT&&window.YT.Player){jessieYTReady=true;return Promise.resolve();}
+ if(window.__jessieYTLoading)return window.__jessieYTLoading;
+ window.__jessieYTLoading=new Promise(resolve=>{
+   window.onYouTubeIframeAPIReady=()=>{jessieYTReady=true;resolve();};
+   const tag=document.createElement("script");
+   tag.src="https://www.youtube.com/iframe_api";
+   tag.async=true;
+   document.head.appendChild(tag);
+ });
+ return window.__jessieYTLoading;
 }
-function retrySystemMusic(){startSystemMusic(true);}
-window.addEventListener("pointerdown",()=>startSystemMusic(true),{once:true});
-window.addEventListener("touchstart",()=>startSystemMusic(true),{once:true,passive:true});
-window.addEventListener("keydown",()=>startSystemMusic(true),{once:true});
+
+function createJessieMusicPlayer(){
+ const host=document.getElementById("jessie-youtube-player");
+ if(!host||jessieYT)return;
+ if(!(window.YT&&window.YT.Player))return;
+ jessieYT=new YT.Player(host,{
+   width:"320",height:"180",videoId:"_IetZZgzbPo",
+   playerVars:{autoplay:0,controls:0,loop:1,playlist:"_IetZZgzbPo",playsinline:1,rel:0,origin:location.origin},
+   events:{
+     onReady:e=>{
+       e.target.setVolume(100);
+       if(jessieMusicPending){jessieMusicPending=false;e.target.unMute();e.target.playVideo();}
+     },
+     onAutoplayBlocked:()=>showMusicRetry(),
+     onError:()=>showMusicRetry()
+   }
+ });
+}
+
+function prepareSystemMusic(){
+ loadJessieYouTubeAPI().then(createJessieMusicPlayer).catch(()=>{});
+}
+
+function startSystemMusic(userGesture=false){
+ jessieMusicPending=!!userGesture;
+ if(jessieYT){
+   try{
+     jessieYT.unMute();
+     jessieYT.setVolume(100);
+     jessieYT.playVideo();
+   }catch{}
+   return;
+ }
+ prepareSystemMusic();
+}
+
+function showMusicRetry(){
+ const b=document.getElementById("jessie-music-retry");
+ if(b)b.hidden=false;
+}
+function retrySystemMusic(){
+ jessieMusicPending=true;
+ if(jessieYT){
+   try{jessieYT.unMute();jessieYT.setVolume(100);jessieYT.playVideo()}catch{}
+ }else prepareSystemMusic();
+}
+function enterJessieSystem(){
+ startSystemMusic(true);
+ const overlay=document.getElementById("overlay");
+ if(overlay)overlay.classList.add("hidden");
+ render("dashboard");
+ toast("JESSIE ONLINE · SYSTEM MUSIC ACTIVE");
+}
+
 function speak(text){if(!state.settings.voice||!("speechSynthesis"in window))return;const u=new SpeechSynthesisUtterance(text);u.volume=state.settings.voiceVolume;u.rate=.92;u.pitch=.88;speechSynthesis.cancel();speechSynthesis.speak(u)}
 function tone(kind){if(!state.settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audio.ctx)audio.ctx=new C();const c=audio.ctx,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=kind==="complete"?720:kind==="start"?220:420;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime((state.settings.soundVolume||.2)*.25,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.32);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch{}}
 function startAmbient(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(audio.ctx)audio.ctx.resume();else audio.ctx=new C();const c=audio.ctx,g=c.createGain(),o=c.createOscillator();g.gain.value=(state.settings.soundVolume||.2)*.08;o.type="sine";o.frequency.value=55;o.connect(g).connect(c.destination);o.start();audio.ambient=o;audio.master=g}catch{}}
