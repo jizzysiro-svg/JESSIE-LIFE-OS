@@ -1,56 +1,55 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#050506"><meta name="description" content="JESSIE LIFE OS — autonomous personal study and life operating system">
-<script>
-(async()=>{
-  const BUILD="20260928-31";
-  try{
-    if(!("serviceWorker" in navigator))return;
-    if(sessionStorage.getItem("jessieFresh23"))return;
-    const regs=await navigator.serviceWorker.getRegistrations();
-    const keys=window.caches?await caches.keys():[];
-    if(regs.length||keys.length){
-      sessionStorage.setItem("jessieFresh23","1");
-      await Promise.all(regs.map(r=>r.unregister()));
-      if(window.caches)await Promise.all(keys.map(k=>caches.delete(k)));
-      const u=new URL(location.href);
-      u.searchParams.set("build",BUILD);
-      u.hash="dashboard";
-      location.replace(u.href);
-    }
-  }catch(e){console.warn("JESSIE cache reset:",e)}
-})();
-</script>
-<link rel="manifest" href="manifest.json"><title>JESSIE LIFE OS</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260928-31">
-<meta name="jessie-build" content="20260928-31"></head>
-<body data-build="20260928-31"><svg aria-hidden="true" width="0" height="0" style="position:absolute;left:-9999px;overflow:hidden"><defs><filter id="jessieNeonYellow" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2000 0.6720 0.0679 0 0 0 0 0 0 0 0 0 0 1 0"/></filter></defs></svg>
-<div class="ambient a1"></div><div class="ambient a2"></div><div class="grain"></div>
-<div id="app">
-<aside class="sidebar">
-  <div class="brand"><div class="brand-mark">J</div><div><b>JESSIE</b><small>LIFE OS</small></div></div>
-  <div class="philosophy">THE USER SETS THE DIRECTION.<br><strong>JESSIE MANAGES THE NEXT STEP.</strong></div>
-  <nav id="nav">
-    <button data-view="dashboard" class="active"><span>◈</span>Command Center</button>
-    <button data-view="study"><span>◉</span>Study Mode</button>
-    <button data-view="tasks"><span>✓</span>Today's Tasks</button>
-    <button data-view="life"><span>✦</span>Life Goals</button>
-    <button data-view="roadmap"><span>◇</span>Roadmap</button>
-    <button data-view="library"><span>▣</span>JESSIE Library</button>
-    <button data-view="progress"><span>↗</span>Progress</button>
-    <button data-view="settings"><span>⚙</span>Settings</button>
-  </nav>
-  <div class="sidebar-foot"><div class="live"><i></i>LOCAL SYSTEM ONLINE</div><div class="side-streak"><small>STREAK</small><b id="sideStreak">0</b><em>days</em></div></div>
-</aside>
-<main class="main">
-<header class="topbar"><div class="top-left"><button id="mobileMenu" class="icon">☰</button><div><small id="dateLabel"></small><h1 id="pageTitle">Command Center</h1></div></div><div class="top-actions"><button id="voiceBtn" class="icon" title="Voice">◌</button><button id="soundBtn" class="icon" title="Sound">♫</button><button id="quickStart" class="primary small">START STUDY</button></div></header>
-<section id="view"></section>
-</main></div>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<meta name="description" content="JESSIE NEXUS — personal operating system for 2027">
+<title>JESSIE NEXUS // LIFE OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=nexus-01">
+</head>
+<body>
+<div class="stars"></div><div class="nebula n1"></div><div class="nebula n2"></div>
+<div id="boot" class="boot">
+  <div class="boot-grid"></div>
+  <div class="boot-core"><span>J</span></div>
+  <div class="boot-kicker">JESSIE / NEXUS OS</div>
+  <h1>ENTER YOUR<br><em>NEXT ERA.</em></h1>
+  <p>A personal command system built around one rule:<br><strong>your goals become today's actions.</strong></p>
+  <div class="boot-song"><span>◉ SYSTEM SIGNAL</span><b>I DANCE TO FORGET</b><small>audio will start after your command</small></div>
+  <button class="launch" onclick="launchNexus()">INITIALIZE NEXUS <span>↗</span></button>
+  <small class="boot-note">LOCAL · PRIVATE · SAVED IN THIS BROWSER</small>
+</div>
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-orbit">J</div><div><b>JESSIE</b><small>NEXUS OS</small></div></div>
+    <div class="side-status"><i></i> SYSTEM ONLINE <span id="clock">--:--</span></div>
+    <nav id="nav">
+      <button data-view="dashboard" class="active"><span>⌁</span> Nexus</button>
+      <button data-view="missions"><span>◈</span> Today's Missions</button>
+      <button data-view="life"><span>✦</span> Life Map</button>
+      <button data-view="marketing"><span>◎</span> Marketing</button>
+      <button data-view="italian"><span>◇</span> Italian</button>
+      <button data-view="vibe"><span>♢</span> The Vibe B</button>
+      <button data-view="finance"><span>₤</span> Finance</button>
+      <button data-view="progress"><span>↗</span> Progress</button>
+      <button data-view="settings"><span>⚙</span> Settings</button>
+    </nav>
+    <div class="side-bottom"><small>JESSIE EVOLUTION</small><b id="evo">DORMANT</b><div class="bar"><i id="evoBar"></i></div><span id="evoPct">0%</span></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div><span class="eyebrow" id="eyebrow">NEXUS COMMAND</span><h2 id="pageTitle">Good evening, Jessie.</h2></div>
+      <div class="top-actions"><button class="round" onclick="toggleAudio()" id="audioBtn">♫</button><button class="date-chip" id="dateChip">2026</button></div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
 <div id="toast" class="toast"></div>
-<div id="overlay" class="overlay hidden"><div id="overlayCard" class="overlay-card"></div></div>
-<script src="app.js?v=20260928-31"></script>
+<div id="modal" class="modal hidden"><div id="modalCard" class="modal-card"></div></div>
+<div id="audioDock" class="audio-dock hidden"><span>♪</span><div><small>SYSTEM AUDIO</small><b>I DANCE TO FORGET</b></div><button onclick="toggleAudio()">PLAY</button><iframe id="yt" title="System audio" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<script src="app.js?v=nexus-01"></script>
 </body></html>
