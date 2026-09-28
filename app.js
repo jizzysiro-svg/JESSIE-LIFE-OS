@@ -279,14 +279,15 @@ function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
 }
 
 
-function startSystemMusic(){
+function startSystemMusic(userGesture=false){
  const id="jessie-system-music";
  let f=document.getElementById(id);
- if(!f){f=document.createElement("iframe");f.id=id;f.title="JESSIE System Music";f.allow="autoplay; encrypted-media";f.setAttribute("aria-hidden","true");f.style.cssText="position:fixed;width:1px;height:1px;left:-20px;bottom:-20px;border:0;opacity:0;pointer-events:none";document.body.appendChild(f)}
- f.src="https://www.youtube.com/embed/tcHZFgMIyIk?autoplay=1&loop=1&playlist=tcHZFgMIyIk&playsinline=1&rel=0";
+ if(!f){f=document.createElement("iframe");f.id=id;f.title="JESSIE System Music";f.allow="autoplay; encrypted-media; fullscreen";f.setAttribute("aria-hidden","true");f.style.cssText="position:fixed;width:1px;height:1px;left:-20px;bottom:-20px;border:0;opacity:0;pointer-events:none";document.body.appendChild(f)}
+ const src="https://www.youtube.com/embed/_IetZZgzbPo?autoplay=1&loop=1&playlist=_IetZZgzbPo&playsinline=1&rel=0";
+ if(userGesture||!f.src||!f.src.includes("_IetZZgzbPo")){f.src=src}
 }
-function retrySystemMusic(){startSystemMusic();}
-window.addEventListener("pointerdown",()=>{if(!document.getElementById("jessie-system-music"))startSystemMusic()},{once:true});
+function retrySystemMusic(){startSystemMusic(true);}
+window.addEventListener("pointerdown",()=>startSystemMusic(true),{once:true});
 
 function speak(text){if(!state.settings.voice||!("speechSynthesis"in window))return;const u=new SpeechSynthesisUtterance(text);u.volume=state.settings.voiceVolume;u.rate=.92;u.pitch=.88;speechSynthesis.cancel();speechSynthesis.speak(u)}
 function tone(kind){if(!state.settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audio.ctx)audio.ctx=new C();const c=audio.ctx,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=kind==="complete"?720:kind==="start"?220:420;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime((state.settings.soundVolume||.2)*.25,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.32);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch{}}
@@ -294,4 +295,4 @@ function startAmbient(){try{const C=window.AudioContext||window.webkitAudioConte
 function stopAmbient(){try{audio.ambient?.stop()}catch{}audio.ambient=null}
 function parseRoute(){const h=location.hash.slice(1)||"dashboard";if(h.startsWith("topic/")){openTopic(h.slice(6));return}navigate(V[h]?h:"dashboard")}
 window.addEventListener("hashchange",parseRoute);window.addEventListener("beforeunload",()=>{if(timer.running)finishSession(true)});window.addEventListener("keydown",e=>{if(e.key==="Escape")closeOverlay()});
-ensureDaily();parseRoute();if(state.settings.sound)startAmbient();startSystemMusic();showBootSequence();
+ensureDaily();parseRoute();if(state.settings.sound)startAmbient();startSystemMusic(false);showBootSequence();
