@@ -252,7 +252,7 @@ function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
  const topic=topicById(t.topicId);
  const nextTopic=next?topicById(next.topicId):null;
  const stageLabel=stageName();
- const milestoneText=newly.length?`<div class="holo-milestone"><span>◈</span><div><small>MILESTONE SIGNAL</small><b>${esc(newly[0])}</b></div></div>`:"";
+ const milestoneText=newly.length?`<div class="holo-milestone"><span>◈</span><div><small>MILESTONE SIGNAL</small><b>${esc(newly[0])}</b></div></div>`:"";const rewardText=`<div class="holo-milestone"><span>✦</span><div><small>REWARD UNLOCKED</small><b>Choose one intentional reward</b><small>20 min guilt-free break · favorite drink · self-care · or save the reward budget</small></div></div>`;
  showOverlay(`<div class="holo-wrap">
    <div class="holo-grid"></div><div class="holo-scan"></div><div class="holo-orbit orbit-a"></div><div class="holo-orbit orbit-b"></div>
    <div class="holo-topline"><span>JESSIE / COMMAND CHAMBER</span><span>SYNC ${afterPct}%</span></div>
@@ -263,7 +263,7 @@ function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
    <div class="holo-panel panel-left"><small>MISSION COMPLETE</small><b>+1 TASK</b><span>${esc(topic?.name||t.title)}</span></div>
    <div class="holo-panel panel-right"><small>CURRICULUM SYNC</small><b>${beforePct}% → ${afterPct}%</b><span>${esc(topic?.section||"")}</span></div>
    <div class="holo-bottom"><div><small>NEXT OBJECTIVE</small><b>${esc(nextTopic?.name||"CURRICULUM COMPLETE")}</b></div><button class="primary" onclick="closeOverlay();setTimeout(()=>{if(${next?"true":"false"})openTask('${next?.id||""}')},120)">NEXT STEP →</button></div>
-   ${milestoneText}
+   ${milestoneText}${rewardText}
  </div>`);
  setTimeout(()=>{const w=document.querySelector('.holo-wrap');if(w)w.classList.add('ignite')},30);
 }
