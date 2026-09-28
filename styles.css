@@ -326,3 +326,20 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
 .fd-reward p{margin:0 0 8px}
 .fd-reward ul{margin:0;padding-left:16px;display:grid;gap:4px}
 @media(max-width:900px){.fd-gift-wrap{align-items:flex-start}.fd-gift{width:70px;height:62px;flex-basis:70px}.fd-gift:after{left:32px}.fd-gift i{left:15px}.fd-gift b{left:29px}}
+
+/* BUILD 20 — additive holographic reward visual */
+.fd-gift-holo-scene{position:relative;width:122px;height:142px;flex:0 0 122px;display:flex;align-items:center;justify-content:center;isolation:isolate}
+.fd-gift-holo-grid{position:absolute;inset:17px 5px 22px;border:1px solid rgba(255,240,0,.16);border-radius:50%;transform:perspective(90px) rotateX(64deg);box-shadow:0 0 22px rgba(255,240,0,.08),inset 0 0 20px rgba(255,240,0,.04)}
+.fd-gift-holo-ring{position:absolute;border:1px solid rgba(255,240,0,.52);border-radius:50%;box-shadow:0 0 12px rgba(255,240,0,.2);animation:fdGiftOrbit 5s linear infinite}
+.fd-gift-holo-ring.ring-a{width:105px;height:42px;transform:rotate(24deg)}
+.fd-gift-holo-ring.ring-b{width:72px;height:112px;transform:rotate(-28deg);animation-duration:7s}
+.fd-gift-holo-scan{position:absolute;width:92px;height:2px;background:linear-gradient(90deg,transparent,#fff000,#ffffa0,#fff000,transparent);box-shadow:0 0 12px #fff000;animation:fdGiftScan 2.6s ease-in-out infinite;z-index:4}
+.fd-gift-holo-scene .fd-gift{z-index:3;transform:translateY(2px);animation:fdGiftFloat 3s ease-in-out infinite}
+.fd-gift-status{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:6px;letter-spacing:2px;color:#fff000;white-space:nowrap;text-shadow:0 0 8px rgba(255,240,0,.7)}
+.fd-gift-spark{position:absolute;width:4px;height:4px;background:#fff000;border-radius:50%;box-shadow:0 0 9px #fff000;z-index:5;animation:fdGiftSpark 2.2s ease-in-out infinite}
+.fd-gift-spark.s1{top:20px;left:22px}.fd-gift-spark.s2{top:42px;right:8px;animation-delay:.5s}.fd-gift-spark.s3{bottom:34px;left:8px;animation-delay:1s}.fd-gift-spark.s4{bottom:45px;right:18px;animation-delay:1.5s}
+@keyframes fdGiftFloat{0%,100%{transform:translateY(3px)}50%{transform:translateY(-5px)}}
+@keyframes fdGiftOrbit{from{transform:rotate(0deg) rotateX(8deg)}to{transform:rotate(360deg) rotateX(8deg)}}
+@keyframes fdGiftScan{0%,100%{top:34px;opacity:.25}50%{top:104px;opacity:1}}
+@keyframes fdGiftSpark{0%,100%{transform:scale(.55);opacity:.25}50%{transform:scale(1.45);opacity:1}}
+@media(max-width:900px){.fd-gift-holo-scene{width:90px;height:120px;flex-basis:90px}.fd-gift-holo-ring.ring-a{width:82px}.fd-gift-holo-ring.ring-b{height:92px}.fd-gift-holo-scan{width:70px}}
