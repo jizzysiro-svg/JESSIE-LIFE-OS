@@ -117,3 +117,18 @@ button.secondary:hover,.icon:hover{transform:translateY(-2px);border-color:#ff17
 .task-action{color:#ff3b61!important;text-shadow:0 0 10px rgba(255,23,61,.35)}
 .recycle-btn{border-color:#7a1730!important;color:#ff5875!important;background:rgba(112,11,39,.12)!important}
 .recycle-btn:hover{box-shadow:0 0 22px rgba(255,23,61,.18),0 10px 28px rgba(0,0,0,.3)!important}
+
+/* DARK LUXURY YELLOW ACCENT + LIFE GOALS */
+:root{--gold:#ffd21a;--gold2:#ffe66b;--violet:#ffd21a;--green:#e8c400;--red:#ffd21a;--line:#30270a;--line2:#5a490c}
+.a1{background:#ffd21a!important;opacity:.07}.a2{background:#9a7b00!important;opacity:.06}.brand-mark{border-color:#6b570d;color:#ffd21a;box-shadow:0 0 32px rgba(255,210,26,.18)}
+.philosophy{border-left-color:#78620e}.philosophy strong{color:#ffe66b}nav button:hover{background:rgba(255,210,26,.07)}
+nav button.active{background:linear-gradient(90deg,rgba(255,210,26,.14),rgba(255,210,26,.025));border-color:#5c4b0d;box-shadow:inset 2px 0 0 #ffd21a}
+nav button.active span,.eyebrow{color:#ffe66b!important}button.primary{background:linear-gradient(135deg,#ffd21a,#b78f00)!important;border-color:#ffe66b!important;color:#151208!important}
+button.secondary,.icon{border-color:#4a3b0b!important;background:rgba(255,210,26,.025)!important}button.secondary:hover,.icon:hover{border-color:#ffd21a!important}
+.progress-fill,.bar-fill{background:linear-gradient(90deg,#b78f00,#ffd21a,#fff1a8)!important}.live i{background:#ffd21a!important;box-shadow:0 0 12px #ffd21a!important}
+.task{background:linear-gradient(90deg,rgba(90,70,8,.18),rgba(12,10,5,.10));border-bottom-color:#3b300b}.task .check{border-color:#66520d;background:#110f07;color:#ffd21a}.task.done .check{background:#78600b;color:#fff;border-color:#a88916}
+.task-title{color:#f3ecd0}.task-meta{color:#a79a6f}.pill{color:#d7c786;border-color:#5b4b0f;background:rgba(84,70,10,.14)}.task-action{color:#ffd21a!important}
+.life-hero h2{font:600 32px "Playfair Display";margin:8px 0 10px}.life-hero p{color:var(--muted);max-width:760px;line-height:1.75;font-size:11px}.life-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+.life-goal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.life-goal h4{font:600 18px "Playfair Display";margin:7px 0 9px}.life-goal p{font-size:10px;color:var(--muted);line-height:1.6;min-height:48px}.life-progress-line{display:flex;justify-content:space-between;margin:7px 0 10px;color:var(--muted);font-size:9px}.life-progress-line b{color:var(--gold)}.life-task-desc{font-size:9px;color:var(--dim);line-height:1.5;margin-top:5px;max-width:620px}.life-empty{color:var(--muted);font-size:11px;line-height:1.7;padding:12px}
+.italian-phases{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.italian-phase{border:1px solid var(--line);border-radius:12px;padding:12px;background:#0b0b0e}.italian-phase.current{border-color:#80680f;box-shadow:0 0 20px rgba(255,210,26,.06)}.italian-phase b{display:block;font-size:10px;color:var(--gold)}.italian-phase span{display:block;font-size:9px;color:var(--muted);line-height:1.55;margin-top:5px}
+@media(max-width:900px){.life-goal-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.life-stats,.life-goal-grid,.italian-phases{grid-template-columns:1fr}}
