@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=nexus-02">
+<link rel="stylesheet" href="styles.css?v=nexus-03">
 </head>
 <body>
 <div class="stars"></div><div class="nebula n1"></div><div class="nebula n2"></div>
-<div id="boot" class="boot">
+<div id="boot" class="boot" onclick="if(event.target===this)launchNexus()">
   <div class="boot-grid"></div>
   <div class="boot-core"><span>J</span></div>
   <div class="boot-kicker">JESSIE / NEXUS OS</div>
@@ -21,7 +21,7 @@
   <p>A personal command system built around one rule:<br><strong>your goals become today's actions.</strong></p>
   <div class="boot-song"><span>◉ SYSTEM SIGNAL</span><b>I DANCE TO FORGET</b><small>audio will start after your command</small></div>
   <button class="launch" onclick="launchNexus()">INITIALIZE NEXUS <span>↗</span></button>
-  <small class="boot-note">LOCAL · PRIVATE · SAVED IN THIS BROWSER</small>
+  <small class="boot-note">LOCAL · PRIVATE · SAVED IN THIS BROWSER · TAP INITIALIZE TO ENTER</small>
 </div>
 <div id="app" class="app hidden">
   <aside class="sidebar">
@@ -51,5 +51,5 @@
 <div id="toast" class="toast"></div>
 <div id="modal" class="modal hidden"><div id="modalCard" class="modal-card"></div></div>
 <div id="audioDock" class="audio-dock hidden"><span>♪</span><div><small>SYSTEM AUDIO</small><b>I DANCE TO FORGET</b></div><button onclick="toggleAudio()">PLAY</button><iframe id="yt" title="System audio" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-<script src="app.js?v=nexus-02"></script>
+<script src="app.js?v=nexus-03"></script>
 </body></html>
