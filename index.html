@@ -5,19 +5,22 @@
 <meta name="theme-color" content="#050506"><meta name="description" content="JESSIE LIFE OS — autonomous personal study and life operating system">
 <script>
 (async()=>{
-  const BUILD="20260928-22";
-  if("serviceWorker" in navigator){
-    try{
-      const regs=await navigator.serviceWorker.getRegistrations();
-      const keys=window.caches?await caches.keys():[];
-      if(regs.length||keys.length){
-        await Promise.all(regs.map(r=>r.unregister()));
-        if(window.caches)await Promise.all(keys.map(k=>caches.delete(k)));
-        setTimeout(()=>location.replace(location.pathname+"?build="+BUILD+"#dashboard"),80);
-        return;
-      }
-    }catch(e){}
-  }
+  const BUILD="20260928-23";
+  try{
+    if(!("serviceWorker" in navigator))return;
+    if(sessionStorage.getItem("jessieFresh23"))return;
+    const regs=await navigator.serviceWorker.getRegistrations();
+    const keys=window.caches?await caches.keys():[];
+    if(regs.length||keys.length){
+      sessionStorage.setItem("jessieFresh23","1");
+      await Promise.all(regs.map(r=>r.unregister()));
+      if(window.caches)await Promise.all(keys.map(k=>caches.delete(k)));
+      const u=new URL(location.href);
+      u.searchParams.set("build",BUILD);
+      u.hash="dashboard";
+      location.replace(u.href);
+    }
+  }catch(e){console.warn("JESSIE cache reset:",e)}
 })();
 </script>
 <link rel="manifest" href="manifest.json"><title>JESSIE LIFE OS</title>
