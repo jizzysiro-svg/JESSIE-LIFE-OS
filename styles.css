@@ -213,3 +213,14 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
  filter:grayscale(1) sepia(1) saturate(8) hue-rotate(2deg) contrast(1.12) brightness(1.10) drop-shadow(0 0 20px rgba(255,240,0,.5))!important;
 }
 .jlayer{box-shadow:0 0 65px rgba(255,240,0,.28)!important}
+
+
+/* FINAL JESSIE COLOR: YELLOW, KEEP PHOTO DETAIL */
+.jlayer,.dashboard-jessie-float img,.holo-jessie .jlayer{
+ filter:grayscale(1) sepia(1) saturate(100%) hue-rotate(18deg) contrast(1.12) brightness(1.05)!important;
+ opacity:1!important;
+ mix-blend-mode:normal!important;
+}
+.dashboard-jessie-float img{
+ filter:grayscale(1) sepia(1) saturate(100%) hue-rotate(18deg) contrast(1.12) brightness(1.08) drop-shadow(0 0 22px rgba(255,240,0,.58))!important;
+}
