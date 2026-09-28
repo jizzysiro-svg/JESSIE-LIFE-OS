@@ -1,4 +1,11 @@
-const BUILD="20260928-17";
-self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
-self.addEventListener("activate",e=>e.waitUntil((async()=>{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));await self.clients.claim();})()));
-self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request,{cache:"no-store"}));});
+/* JESSIE LIFE OS — cache shutdown worker */
+self.addEventListener("install",event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate",event=>event.waitUntil((async()=>{
+  const keys=await caches.keys();
+  await Promise.all(keys.map(k=>caches.delete(k)));
+  await self.clients.claim();
+  await self.registration.unregister();
+  const clients=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+  clients.forEach(client=>client.postMessage({type:"JESSIE_CACHE_PURGED"}));
+})()));
+self.addEventListener("fetch",event=>event.respondWith(fetch(event.request)));
