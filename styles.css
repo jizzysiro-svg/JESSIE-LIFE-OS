@@ -233,3 +233,38 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
  mix-blend-mode:normal!important;
 }
 .dashboard-jessie-float img{filter:url("#jessieNeonYellow") drop-shadow(0 0 22px rgba(255,240,0,.62))!important}
+
+
+/* JESSIE HOLOGRAPHIC ORBIT RESTORE — NEON YELLOW */
+.dashboard-jessie-float{overflow:visible!important;isolation:isolate!important}
+.dashboard-jessie-float .jessie-float-aura{z-index:0!important}
+.dashboard-jessie-float img{z-index:2!important}
+.dashboard-jessie-float .jessie-float-ring{z-index:4!important;display:block!important;opacity:1!important;border-color:#fff000!important}
+.dashboard-jessie-float .jessie-float-ring.ring-one{
+ width:215px!important;height:120px!important;
+ border:2px solid rgba(255,240,0,.88)!important;
+ border-radius:50%!important;
+ box-shadow:0 0 7px #fff000,0 0 22px rgba(255,240,0,.72),inset 0 0 12px rgba(255,240,0,.12)!important;
+ transform:rotateX(68deg)!important;
+ animation:jessieOrbitA 7s linear infinite!important;
+}
+.dashboard-jessie-float .jessie-float-ring.ring-two{
+ width:165px!important;height:255px!important;
+ border:1px dashed rgba(255,240,0,.95)!important;
+ border-radius:50%!important;
+ box-shadow:0 0 6px #fff000,0 0 18px rgba(255,240,0,.55)!important;
+ transform:rotateY(67deg) rotateZ(15deg)!important;
+ animation:jessieOrbitB 5.5s linear infinite!important;
+}
+.dashboard-jessie-float:before,
+.dashboard-jessie-float:after{
+ content:"";position:absolute;z-index:4;pointer-events:none;border:1px solid rgba(255,240,0,.7);
+ border-radius:50%;box-shadow:0 0 5px #fff000,0 0 16px rgba(255,240,0,.5);
+}
+.dashboard-jessie-float:before{width:235px;height:72px;transform:rotateX(72deg);animation:jessieOrbitC 6.5s linear infinite}
+.dashboard-jessie-float:after{width:145px;height:285px;transform:rotateY(72deg) rotateZ(-22deg);animation:jessieOrbitD 8s linear infinite reverse}
+.dashboard-jessie-float .jessie-float-scan{z-index:5!important;background:linear-gradient(90deg,transparent,#fff000 45%,#ffff9a 50%,#fff000 55%,transparent)!important;box-shadow:0 0 9px #fff000,0 0 22px rgba(255,240,0,.8)!important;opacity:1!important}
+@keyframes jessieOrbitA{to{transform:rotateX(68deg) rotateZ(360deg)}}
+@keyframes jessieOrbitB{to{transform:rotateY(67deg) rotateZ(375deg)}}
+@keyframes jessieOrbitC{to{transform:rotateX(72deg) rotateZ(-360deg)}}
+@keyframes jessieOrbitD{to{transform:rotateY(72deg) rotateZ(338deg)}}
