@@ -278,21 +278,20 @@ function startSystemMusic(userGesture=false){
   f=document.createElement("iframe");
   f.id=id;
   f.title="JESSIE System Music";
+  f.width="200";f.height="200";
   f.allow="autoplay; encrypted-media; fullscreen";
   f.setAttribute("aria-hidden","true");
-  f.style.cssText="position:fixed;width:2px;height:2px;left:-4px;bottom:-4px;border:0;opacity:.01;pointer-events:none";
+  f.style.cssText="position:fixed;width:200px;height:200px;left:-220px;top:-220px;border:0;opacity:0;pointer-events:none";
   document.body.appendChild(f);
  }
  const origin=encodeURIComponent(location.origin);
- const src="https://www.youtube.com/embed/_IetZZgzbPo?autoplay=1&loop=1&playlist=_IetZZgzbPo&playsinline=1&rel=0&controls=0&modestbranding=1&origin="+origin;
+ const src="https://www.youtube.com/embed/_IetZZgzbPo?autoplay=1&loop=1&playlist=_IetZZgzbPo&playsinline=1&rel=0&controls=0&enablejsapi=1&origin="+origin;
  if(userGesture||!f.src||!f.src.includes("_IetZZgzbPo"))f.src=src;
 }
 function retrySystemMusic(){startSystemMusic(true);}
-window.addEventListener("pointerdown",()=>startSystemMusic(true));
-window.addEventListener("touchstart",()=>startSystemMusic(true),{passive:true});
-window.addEventListener("keydown",()=>startSystemMusic(true));
-window.addEventListener("click",()=>startSystemMusic(true));
-
+window.addEventListener("pointerdown",()=>startSystemMusic(true),{once:true});
+window.addEventListener("touchstart",()=>startSystemMusic(true),{once:true,passive:true});
+window.addEventListener("keydown",()=>startSystemMusic(true),{once:true});
 function speak(text){if(!state.settings.voice||!("speechSynthesis"in window))return;const u=new SpeechSynthesisUtterance(text);u.volume=state.settings.voiceVolume;u.rate=.92;u.pitch=.88;speechSynthesis.cancel();speechSynthesis.speak(u)}
 function tone(kind){if(!state.settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audio.ctx)audio.ctx=new C();const c=audio.ctx,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=kind==="complete"?720:kind==="start"?220:420;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime((state.settings.soundVolume||.2)*.25,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.32);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch{}}
 function startAmbient(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(audio.ctx)audio.ctx.resume();else audio.ctx=new C();const c=audio.ctx,g=c.createGain(),o=c.createOscillator();g.gain.value=(state.settings.soundVolume||.2)*.08;o.type="sine";o.frequency.value=55;o.connect(g).connect(c.destination);o.start();audio.ambient=o;audio.master=g}catch{}}
