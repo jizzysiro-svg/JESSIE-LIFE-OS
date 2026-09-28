@@ -1,9 +1,6 @@
-const STORE="JESSIE_LIFE_OS_OCT1_NEON_V1";
-const START="2026-10-01";
-const TEST_MODE=false;
-const TEST_KEY="JESSIE_LIFE_OS_V3_TEST_DATE";
-const ref="jessie-reference.jpg";
-
+"use strict";
+(function(){
+const KEY="JESSIE_NEXUS_V1",MS="2026-10-01",LS="2027-01-01",MUSIC="9nN9qMW4Fek";
 const CURRICULUM=[
 ["Marketing Fundamentals",["Marketing vs Sales vs Branding","Market","Customer","Target Audience","Persona","Needs","Wants","Pain Points","Value Proposition","Positioning","USP","Competitors","Market Research","Customer Journey","Funnel","Awareness","Consideration","Conversion","Retention","B2B","B2C","Offer","Pricing Psychology","Customer Experience"]],
 ["Marketing Strategy",["Marketing Objectives","Market Segmentation","Targeting","Positioning Strategy","Marketing Mix","4Ps","7Ps","Competitive Strategy","Go-to-Market","Channel Strategy","Marketing Plan","Budgeting","Strategic Priorities"]],
@@ -16,361 +13,74 @@ const CURRICULUM=[
 ["Analytics",["Marketing Metrics","KPIs","North Star Metric","Traffic","Conversion Rate","CAC","LTV","ROAS","Funnel Analytics","Dashboards","Experiments","A/B Testing","Data Interpretation"]],
 ["CRM & Retention",["CRM Fundamentals","Lead Management","Customer Lifecycle","Email Flows","Segmentation","Retention Strategy","Churn","Loyalty","Lifecycle Campaigns","Personalization","Customer Value"]],
 ["Growth",["Growth Loops","Growth Mindset","Acquisition","Activation","Retention","Referral","Experimentation","Growth Metrics","Product-Led Growth","Virality","Growth Planning"]],
-["Marketing Management",["Marketing Leadership","Team Structure","Agency Management","Campaign Planning","Resource Allocation","Marketing Operations","Stakeholder Management","Reporting","Risk Management","Integrated Campaigns","Strategic Review"]]
-].map((s,si)=>({id:"s"+(si+1),name:s[0],topics:s[1].map((name,ti)=>({id:`s${si+1}t${ti+1}`,name,objective:`Understand and apply ${name.toLowerCase()} within ${s[0].toLowerCase()}.`,duration:25,difficulty:ti%4===0?"Core":ti%4===1?"Applied":"Advanced"}))}));
-
-function seed(){return {tasks:[],sessions:[],materials:[],notes:{},settings:{dailyTasks:2,review:"light",voice:true,sound:true,voiceVolume:.8,soundVolume:.25,animation:"cinematic",reminders:true,reducedMotion:false},unlocked:0,milestones:{},lastActivity:null,created:Date.now()}}
-let state=load(), timer={running:false,seconds:0,start:null,taskId:null,interval:null}, current="dashboard", audio={ctx:null,master:null,ambient:null};
-
-function load(){try{return {...seed(),...JSON.parse(localStorage.getItem(STORE)||"{}")}}catch{return seed()}}
-function save(){localStorage.setItem(STORE,JSON.stringify(state))}
-function iso(d=new Date()){return d.toISOString().slice(0,10)}
-function dObj(s){let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
-function today(){
-  if(TEST_MODE){
-    const saved=localStorage.getItem(TEST_KEY);
-    if(saved && /^\d{4}-\d\d-\d\d$/.test(saved)) return saved;
-    const now=iso(); localStorage.setItem(TEST_KEY,now); return now;
-  }
-  const q=new URLSearchParams(location.search).get("date");
-  if(q && /^\d{4}-\d\d-\d\d$/.test(q)) return q;
-  const now=iso();
-  return now < START ? START : now;
-}
-function studyDay(){
-  if(TEST_MODE){ const base=localStorage.getItem("JESSIE_LIFE_OS_V3_TEST_BASE")||today(); localStorage.setItem("JESSIE_LIFE_OS_V3_TEST_BASE",base); return Math.floor((dObj(today())-dObj(base))/86400000)+1; }
-  const a=dObj(START),b=dObj(today());return Math.floor((b-a)/86400000)+1
-}
-function active(){return TEST_MODE || studyDay()>=1}
-function allTopics(){return CURRICULUM.flatMap((s,si)=>s.topics.map((t,ti)=>({...t,section:s.name,sectionId:s.id,order:si*100+ti})))}
-const TOPICS=allTopics();
-function taskRecord(topic){return {id:"task-"+topic.id,topicId:topic.id,sectionId:topic.sectionId,title:topic.name,description:topic.objective,estimated:topic.duration,difficulty:topic.difficulty,status:"NOT STARTED",studyDay:null,createdDate:today(),scheduledDate:today(),completionDate:null,completionTimestamp:null,notes:"",materialIds:[],review:false,order:topic.order}}
-function ensureRecord(topic){let t=state.tasks.find(x=>x.id==="task-"+topic.id);if(!t){t=taskRecord(topic);state.tasks.push(t)}return t}
-function completed(t){return t.status==="COMPLETED"}
-function taskById(id){return state.tasks.find(t=>t.id===id)}
-function topicById(id){return TOPICS.find(t=>t.id===id)}
-function generatedCompletedCount(){return state.tasks.filter(completed).length}
-function totalTasks(){return TOPICS.length}
-function overallPct(){return Math.round(generatedCompletedCount()/totalTasks()*100)}
-function topicComplete(id){const t=topicById(id);return !!t&&state.tasks.find(x=>x.topicId===id&&completed(x))}
-function sectionPct(s){let ts=s.topics.length,done=s.topics.filter(t=>topicComplete(t.id)).length;return Math.round(done/ts*100)}
-function currentTopic(){return TOPICS.find(t=>!topicComplete(t.id))||TOPICS[TOPICS.length-1]}
-function nextTask(){return TOPICS.find(t=>!topicComplete(t.id))}
-function overdue(){return state.tasks.filter(t=>!completed(t)&&t.scheduledDate<today()).sort((a,b)=>a.order-b.order)}
-function ensureDaily(){
- ensureLifeState();
- if(!active())return;
- const od=overdue();
- od.forEach(t=>t.scheduledDate=today());
- const existing=new Set(state.tasks.filter(t=>!completed(t)&&t.scheduledDate===today()).map(t=>t.id));
- let slots=Math.max(1,Number(state.settings.dailyTasks)||2);
- for(const t of TOPICS){
-   if(existing.size>=slots)break;
-   const r=ensureRecord(t);
-   if(!completed(r)&&r.scheduledDate<=today()){r.scheduledDate=today();r.studyDay=studyDay();existing.add(r.id)}
- }
- // Preserve any overdue work even if pace is exceeded.
- ensureLifeDaily();
- save();
-}
-function todayTasks(){return state.tasks.filter(t=>t.scheduledDate===today()&&!completed(t)).sort((a,b)=>a.order-b.order).slice(0,99)}
-function todayDone(){return state.tasks.filter(t=>t.completionDate===today()&&completed(t))}
-function currentStreak(){
- let s=0,d=dObj(today());const qualifying=new Set(state.sessions.filter(x=>x.duration>=1).map(x=>x.date));
- while(qualifying.has(iso(d))){s++;d.setDate(d.getDate()-1)}
- return s;
-}
-function longestStreak(){
- const dates=[...new Set(state.sessions.filter(x=>x.duration>=1).map(x=>x.date))].sort();let best=0,run=0,prev=null;
- dates.forEach(x=>{if(prev&&Math.round((dObj(x)-dObj(prev))/86400000)===1)run++;else run=1;best=Math.max(best,run);prev=x});return best;
-}
-function studyMinutes(rangeStart=null){return state.sessions.filter(s=>!rangeStart||s.date>=rangeStart).reduce((a,b)=>a+b.duration,0)}
-function stage(){const p=overallPct();return p>=100?10:p>=85?9:p>=70?8:p>=55?7:p>=40?6:p>=25?4:p>=10?2:0}
-function stageName(){return ["DORMANT","PRESENCE","FACE ONLINE","FORMING","TORSO ONLINE","STRUCTURE","BODY ONLINE","DETAILS","DIMENSION","AWAKENED","COMPLETE"][stage()]}
-function milestoneList(){const p=overallPct(),days=currentStreak(),topicCount=generatedCompletedCount();return [
-["first-session","First Study Session",state.sessions.length>0],
-["first-task","First Completed Task",topicCount>=1],
-["first-topic","First Completed Topic",topicCount>=1],
-["first-section","First Completed Section",CURRICULUM.some(s=>sectionPct(s)>=100)],
-["streak3","3-Day Streak",days>=3],
-["streak7","7-Day Streak",days>=7],
-["topics10","10 Completed Topics",topicCount>=10],
-["p25","25% Curriculum",p>=25],["p50","50% Curriculum",p>=50],["p75","75% Curriculum",p>=75],["p100","100% Curriculum",p>=100]]}
-function checkMilestones(){
- let newly=[];for(const [id,name,ok] of milestoneList()){if(ok&&!state.milestones[id]){state.milestones[id]=Date.now();newly.push(name)}}if(newly.length){save();return newly}return[]
-}
-
-function fmt(sec){return `${String(Math.floor(sec/60)).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`}
-function datePretty(s=today()){return dObj(s).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"})}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function materialFor(taskId){return state.materials.filter(m=>m.taskId===taskId||m.topicId===taskById(taskId)?.topicId)}
-function taskHTML(t,interactive=true){
- const topic=topicById(t.topicId);const overdueFlag=!completed(t)&&t.scheduledDate<today();return `<div class="task ${completed(t)?"done":""}" data-task="${t.id}">
- <button class="check" ${interactive?"onclick":"disabled"}="${interactive?`completeTask('${t.id}')`:""}">${completed(t)?"✓":""}</button>
- <div><div class="task-title">${esc(t.title)}</div><div class="task-meta">${esc(topic?.section||"")} · ${t.estimated} min · ${esc(t.difficulty)}</div></div>
- <div class="task-right"><span class="pill ${overdueFlag?"overdue":""}">${overdueFlag?"OVERDUE":t.status}</span>${interactive&&!completed(t)?`<button class="task-action" onclick="openTask('${t.id}')">OPEN →</button>`:""}</div></div>`
-}
-
-function advanceTestDay(){ if(!TEST_MODE)return; const d=dObj(today()); d.setDate(d.getDate()+1); localStorage.setItem(TEST_KEY,iso(d)); ensureDaily(); render(current); toast("TEST DAY ADVANCED · "+datePretty()); }
-function resetTestDay(){ if(!TEST_MODE)return; const now=iso(); localStorage.setItem(TEST_KEY,now); localStorage.setItem("JESSIE_LIFE_OS_V3_TEST_BASE",now); state.tasks=[];state.sessions=[];state.notes={};state.materials=[];state.unlocked=0;state.milestones={};state.lastActivity=null;save();ensureDaily();render(current);toast("TEST RESET · STUDY DAY 1"); }
-
-const LIFE_START="2027-01-01";
-const LIFE_DATA="fin40|💰 Financial|40,000 EGP starting capital|40000|EGP|Build capital gradually before the new year.;save10|💰 Financial|10,000 EGP side savings fund|10000|EGP|Save consistently and review weekly.;emergency10|💰 Financial|10,000 EGP expense emergency fund|10000|EGP|Build a protected necessary-expense buffer.;car100|💰 Financial|100,000 EGP car or motorcycle down payment|100000|EGP|Track the down-payment fund separately.;moneyfellows|💰 Financial|Money Fellows toward 1,000,000 EGP|1000000|EGP|Only consider when work is stable and payments are sustainable.;budget|💰 Financial|Daily spending and clear budget|||Daily expense check plus weekly budget review.;debt|💰 Financial|Reduce borrowing and repay debts|||List obligations and make a concrete repayment step.;rewards|💰 Financial|Personal reward budget without harming savings|||Keep rewards separate from core savings.;dm1|📚 Education|Digital Marketing Course 1 — 12 sessions|12|sessions|12 sessions × about 3 hours with study, practical work and AI.;dm2|📚 Education|Digital Marketing Diploma 2 — 4 sessions|4|sessions|4 sessions, each with 3–6 videos, practical work and AI.;dmpro|📚 Education|Digital Marketing from basics to advanced|||Fundamentals → strategy → channels → paid → analytics → growth.;vibeapply|💍 The Vibe B|Apply learning directly to The Vibe B|||Turn major lessons into Vibe B deliverables.;design|📚 Education|Learn Graphic Design and apply it|||Fundamentals → typography → composition → brand assets.;wedding|💍 Wedding Planning|Wedding Planning Diploma / Course|5000|EGP budget|Target about 5,000 EGP; begin January/February after style change.;cyber|🛡️ Technology|Ethical Hacking / Cybersecurity|||Foundations → networking → Linux → web security → safe labs; strong by mid-year.;website|🤖 AI & Technology|Build a website from scratch with free tools + AI|||HTML/CSS/JS → responsive UI → GitHub Pages → AI workflow.;aihr|🤖 AI & Technology|AI + HR Diplomas in H1|4000|EGP budget|Target combined budget around 4,000 EGP.;aieng|🤖 AI & Technology|AI Engineering & Humanoid Diploma in H2|8000|EGP budget|Second-half focus; budget around 8,000 EGP.;english|🌍 Languages|Super English|||Book + app + AI for grammar, vocabulary, listening, speaking, reading and writing.;italian|🌍 Languages|Italian every day for the year|365|days|365-day Foundation → A1 → A2 → B1 foundation curriculum.;drivecar|🚗 Driving|Learn car driving|8000|EGP budget|Theory → controls → parking → city driving.;drivebike|🚗 Driving|Learn motorcycle riding|4000|EGP budget|Safety → balance → controls → road practice.;wardrobe|👗 Personal Style|Renew the wardrobe|||January: audit → essentials → statement pieces → travel-ready looks.;bag|👗 Personal Style|Buy Travel Bag|6000|EGP budget|January purchase; target around 6,000 EGP.;hair|👗 Personal Style|Change hairstyle|6000|EGP budget|Plan the new style; budget around 6,000 EGP.;laser|👗 Personal Style|Start laser|4000|EGP upfront|January target; 3,000–4,000 EGP upfront then sessions.;vibebrand|💍 The Vibe B|Build The Vibe B as Luxury Wedding Planner brand|||Dark Luxury identity, key symbol, storytelling and premium digital presence.;vibelogo|💍 The Vibe B|Create unconventional non-beginner logo + identity|||Research → key symbol → logo system → typography → usage.;instagram|💍 The Vibe B|Build professional Instagram and digital presence|||Profile → pillars → visual system → launch content → analytics.;name|🪪 Personal Admin|Study changing name / title|15000|EGP budget|Research legal steps, cost and timing before spending.;passport|🪪 Personal Admin|Passport after name / title change|10000|EGP budget|Prepare documents and apply after the change.;ai|🤖 AI & Technology|Use AI deeply for study, marketing, design, websites and projects|||Build reusable AI workflows for life and work.;lifeos|🗓️ 2027 Life System|Run Goal → Milestones → Monthly → Weekly → Daily|||Connect the whole year into daily actions and progress.;birthday|🎂 Personal Milestones|Plan February birthday intentionally|||Reserve time and budget without touching core savings.";
-const LIFE_GOALS=LIFE_DATA.split(";").map(s=>{const a=s.split("|");return{id:a[0],cat:a[1],title:a[2],target:a[3]?Number(a[3]):null,unit:a[4]||"%",plan:a[5],reward:"Intentional reward proportional to the milestone."}});
-const ITALIAN_PHASES=[["Foundation",1,30,"pronunciation, alphabet, greetings, numbers, basic phrases, essere/avere"],["A1 Core",31,90,"articles, gender, present tense, family, routines, food, directions, questions"],["A1 Consolidation",91,150,"past basics, listening, reading, short writing, everyday conversation"],["A2 Core",151,210,"passato prossimo, imperfect foundations, pronouns, comparisons, travel"],["A2 Expansion",211,270,"longer listening, practical speaking, connectors, opinions, problem solving"],["B1 Foundation",271,330,"narration, opinions, explanations, workplace/travel language, longer texts"],["B1 Consolidation",331,365,"conversation, mixed review, presentations, writing, AI conversations"]];
-const ITALIAN_SKILLS=["Vocabulary","Grammar","Listening","Speaking","Reading","Writing","AI Conversation"];
-const LIFE_MONTHS=[
-["JANUARY","Reset + Style + Foundations",["wardrobe","bag","hair","laser","wedding","vibelogo","budget"],["Audit wardrobe and set the exact January budget.","Finalize travel bag/style priorities.","Research Wedding Planning course options around the 5,000 EGP target.","Start The Vibe B key-symbol and identity direction."]],
-["FEBRUARY","Birthday + Wedding + Brand Identity",["birthday","wedding","vibelogo","vibebrand","instagram","english"],["Plan the birthday budget without touching core savings.","Start Wedding Planning study/practical work.","Turn the key symbol into a usable logo direction.","Build The Vibe B Instagram structure."]],
-["MARCH","Marketing Application + Design",["dm1","dm2","dmpro","design","vibeapply"],["Complete a Digital Marketing study block.","Turn one lesson into a The Vibe B deliverable.","Practice one graphic-design principle.","Create one premium brand/content asset."]],
-["APRIL","Cybersecurity + Driving Foundations",["cyber","drivecar","drivebike","english"],["Study networking/Linux/security foundations.","Complete one safe legal cybersecurity lab.","Study one car-driving concept and define the next lesson step.","Study motorcycle safety, balance or controls."]],
-["MAY","Website Building + Web Security",["website","cyber","ai","vibeapply"],["Build one HTML/CSS/JS component.","Study one web-security concept and connect it to the site.","Improve one responsive UI section.","Turn one technical skill into a The Vibe B web asset."]],
-["JUNE","Mid-Year Consolidation",["cyber","english","dmpro","vibebrand","lifeos"],["Review cybersecurity gaps and close one.","Do a focused Super English session.","Review Digital Marketing and apply one advanced concept.","Audit The Vibe B brand system."]],
-["JULY","AI Engineering H2 Launch",["aieng","ai","website","cyber"],["Prepare the AI Engineering/Humanoid study plan and budget.","Study one AI engineering concept and build a tiny experiment.","Use AI to improve one website workflow.","Connect one technical/security concept to the project."]],
-["AUGUST","AI Engineering + The Vibe B Systems",["aieng","ai","vibebrand","instagram"],["Complete an AI Engineering study block.","Build one reusable AI workflow.","Prepare or publish one professional Instagram asset.","Improve one premium digital-presence element."]],
-["SEPTEMBER","Growth + Analytics + Portfolio",["dmpro","vibeapply","instagram","website","design"],["Measure one marketing/content result.","Create one portfolio-quality The Vibe B case-study asset.","Improve one website conversion/presentation detail.","Apply one advanced design skill."]],
-["OCTOBER","Driving + Technical Execution",["drivecar","drivebike","website","cyber","ai"],["Schedule or complete one practical driving step.","Practice one motorcycle skill safely when lessons are available.","Ship one small website improvement.","Complete one technical review."]],
-["NOVEMBER","Finance + Admin + Stability",["fin40","save10","emergency10","car100","debt","name","passport"],["Audit all savings buckets and balances.","Take one concrete debt-reduction action.","Review the vehicle down-payment path.","Research the name/passport next step and expected budget."]],
-["DECEMBER","2027 Closeout + 2028 Launch",["fin40","save10","emergency10","moneyfellows","lifeos","vibebrand","ai"],["Run the final financial review.","Mark goals completed, carried forward or intentionally paused.","Archive the strongest The Vibe B work.","Build the 2028 starting plan from real 2027 results."]]
-];
-const LIFE_ROTATION=[["budget","Money check","Log today's spending and compare it with the budget.",10],["save10","Savings action","Review the side-savings balance and make a realistic savings action if possible.",10],["vibeapply","The Vibe B practical block","Turn one lesson into one small Vibe B deliverable.",35],["cyber","Cybersecurity block","Study one security concept and capture 3 takeaways; use legal labs only.",30],["website","Website block","Build or improve one small website component using free tools + AI.",30],["design","Graphic Design practice","Create or recreate one premium composition or brand asset.",30],["english","English practice","Book/app practice, then a short AI conversation using today's vocabulary.",25],["drivecar","Driving step","Study one driving concept or define the next practical lesson step.",20],["vibebrand","Brand-building block","Advance identity, storytelling, offer or digital presence.",30],["ai","AI systems block","Build one reusable AI workflow for study, marketing, design, projects or life.",25],["lifeos","Life OS review","Check today's priorities, tomorrow's top actions and weekly alignment.",10],["debt","Debt reduction check","Review obligations and record the next concrete repayment step.",10]];
-function ensureLifeState(){if(!state.lifeTasks)state.lifeTasks=[];if(!state.lifeProgress)state.lifeProgress={}}
-function lifeDay(){return Math.max(1,Math.floor((dObj(today())-dObj(LIFE_START))/86400000)+1)}
-function lifePhase(d){return ITALIAN_PHASES.find(p=>d>=p[1]&&d<=p[2])||ITALIAN_PHASES[6]}
-function italianDailyTask(d){const p=lifePhase(d),skill=ITALIAN_SKILLS[(d-1)%7],review=d%7===0;return{id:"life-it-"+d,goalId:"italian",title:review?"Italian weekly review + AI conversation":"Italian · "+skill,description:review?"Review vocabulary and grammar, listen to Italian, speak with AI for 10–15 minutes and write 5 sentences.":"Phase "+p[0]+" · "+skill+". Practice "+p[3]+" in one focused block, then write one takeaway.",estimated:review?40:25,kind:"italian",reward:"Italian reward: favorite song, coffee, or 20-minute guilt-free break."}}
-function lifeMonthPlan(d){const dt=dObj(LIFE_START);dt.setDate(dt.getDate()+Math.max(0,d-1));return LIFE_MONTHS[dt.getMonth()]||LIFE_MONTHS[0]}
-function lifeWeekNumber(d){return Math.floor((d-1)/7)+1}
-function lifeWeekFocus(d){const p=lifeMonthPlan(d);const week=Math.floor(((dObj(LIFE_START).getDate()+d-2)%28)/7);return p[3][week%p[3].length]}
-function lifeDayMode(d){return ["PLAN","LEARN","PRACTICE","BUILD","APPLY","REVIEW","WEEKLY REVIEW"][(d-1)%7]}
-function lifePlanTask(d){const p=lifeMonthPlan(d),week=lifeWeekNumber(d),review=d%7===0,focus=lifeWeekFocus(d),goal=p[2][(week-1)%p[2].length];return{id:"life-plan-"+d,goalId:goal,title:review?"Weekly Life System Review · "+p[0]:p[0]+" · "+lifeDayMode(d),description:review?"Review this week's missions, update goal progress, check spending/savings, and choose next week's concrete action.":"MONTHLY FOCUS: "+p[1]+". WEEKLY TARGET: "+focus+" DAILY MODE: "+lifeDayMode(d)+". Complete one concrete action and leave evidence (note, file, balance, practice result, or next-step decision).",estimated:review?20:30,kind:"life-plan",reward:"Intentional reward proportional to the mission; never use core savings for it."}}
-function rotationTask(d){return lifePlanTask(d)}
-function ensureLifeDaily(){ensureLifeState();if(today()<LIFE_START)return;const d=lifeDay();[italianDailyTask(d),lifePlanTask(d)].forEach(x=>{if(!state.lifeTasks.some(t=>t.id===x.id))state.lifeTasks.push({...x,status:"NOT STARTED",scheduledDate:today(),completionDate:null,completionTimestamp:null})})}
-function lifeGoalProgress(g){const manual=Number(state.lifeProgress[g.id]||0);if(g.id==="italian")return Math.min(365,Math.max(manual,state.lifeTasks.filter(t=>t.goalId==="italian"&&t.status==="COMPLETED").length));return g.target?Math.min(g.target,Math.max(0,manual)):Math.min(100,Math.max(0,manual))}
-function lifeGoalPct(g){const v=lifeGoalProgress(g);return g.id==="italian"?Math.round(v/365*100):(g.target?Math.round(v/g.target*100):v)}
-function updateLifeProgress(id){const g=LIFE_GOALS.find(x=>x.id===id);if(!g)return;const v=prompt("Current progress for "+g.title+" ("+g.unit+"):",String(lifeGoalProgress(g)));if(v===null)return;state.lifeProgress[id]=Math.max(0,Number(v)||0);save();render("life");toast("LIFE GOAL UPDATED")}
-function completeLifeTask(id){ensureLifeState();const t=state.lifeTasks.find(x=>x.id===id);if(!t||t.status==="COMPLETED")return;t.status="COMPLETED";t.completionDate=today();t.completionTimestamp=new Date().toISOString();save();showOverlay("<button class='overlay-close' onclick='closeOverlay()'>×</button><div class='eyebrow'>LIFE MISSION COMPLETE</div><h2>"+esc(t.title)+"</h2><p style='color:var(--muted);line-height:1.7'>"+esc(t.description)+"</p><div class='mini-card' style='margin:20px 0'><small>REWARD SUGGESTION</small><b>"+esc(t.reward)+"</b><span>Keep the reward proportional and separate from core savings.</span></div><button class='primary' onclick='closeOverlay();render(\"life\")'>CONTINUE →</button>")}
-function lifeTodayTasks(){ensureLifeDaily();return state.lifeTasks.filter(t=>t.scheduledDate===today()).sort((a,b)=>a.kind===b.kind?0:(a.kind==="italian"?-1:1))}
-function lifeTaskHTML(t){return "<div class='task life-task "+(t.status==="COMPLETED"?"done":"")+"'><button class='check' "+(t.status==="COMPLETED"?"disabled":"onclick='completeLifeTask(\\\""+t.id+"\\\")'")+">"+(t.status==="COMPLETED"?"✓":"")+"</button><div><div class='task-title'>"+esc(t.title)+"</div><div class='task-meta'>"+esc(LIFE_GOALS.find(g=>g.id===t.goalId)?.cat||"Life")+" · "+t.estimated+" min</div><div class='life-task-desc'>"+esc(t.description)+"</div></div><div class='task-right'><span class='pill'>"+t.status+"</span></div></div>"}
-function lifeGoalsHTML(){ensureLifeState();ensureLifeDaily();const d=today()>=LIFE_START?lifeDay():0,ts=lifeTodayTasks(),it=LIFE_GOALS.find(g=>g.id==="italian"),cats=[...new Set(LIFE_GOALS.map(g=>g.cat))];let o="<div class='card life-hero'><div class='eyebrow'>2027 LIFE OPERATING SYSTEM</div><h2>Goal → Milestones → Monthly → Weekly → Daily</h2><p>Marketing remains intact. This layer adds your financial, education, language, driving, style, Wedding Planning, The Vibe B, admin, AI and personal goals.</p><div class='life-stats'><div class='mini-card'><small>2027 DAY</small><b>"+(d||"PREP")+"</b><span>"+(d?datePretty():"Starts January 1, 2027")+"</span></div><div class='mini-card'><small>ITALIAN</small><b>"+lifeGoalPct(it)+"%</b><span>"+lifeGoalProgress(it)+" / 365 days</span></div><div class='mini-card'><small>GOALS</small><b>"+LIFE_GOALS.length+"</b><span>all goal categories</span></div></div></div>";
-o+="<div class='section-head'><h3>"+(d?"Today's Life Missions":"2027 Life Missions")+"</h3><span>"+(d?ts.filter(t=>t.status==="COMPLETED").length+"/"+ts.length+" COMPLETE":"READY")+"</span></div><div class='card task-list'>"+(d?ts.map(lifeTaskHTML).join(""):"<p class='life-empty'>The 2027 daily engine is prepared. Italian becomes a daily mission from January 1, 2027.</p>")+"</div>";
-o+="<div class='section-head'><h3>Italian · 365-Day Roadmap</h3><span>"+(d?"DAY "+d:"STARTS JAN 1")+"</span></div><div class='card'><div class='italian-phases'>"+ITALIAN_PHASES.map(p=>"<div class='italian-phase "+(d>=p[1]&&d<=p[2]?"current":"")+"'><b>Days "+p[1]+"–"+p[2]+" · "+esc(p[0])+"</b><span>"+esc(p[3])+"</span></div>").join("")+"</div><div class='mini-card' style='margin-top:15px'><small>ITALIAN DAILY MISSION</small><b>"+esc(italianDailyTask(d||1).title)+"</b><span>"+esc(italianDailyTask(d||1).description)+"</span></div></div>";
-cats.forEach(c=>{o+="<div class='section-head'><h3>"+esc(c)+"</h3><span>"+LIFE_GOALS.filter(g=>g.cat===c).length+" GOALS</span></div><div class='life-goal-grid'>";LIFE_GOALS.filter(g=>g.cat===c).forEach(g=>{const p=lifeGoalPct(g),v=lifeGoalProgress(g);o+="<div class='card life-goal'><div class='eyebrow'>"+esc(g.cat)+"</div><h4>"+esc(g.title)+"</h4><p>"+esc(g.plan)+"</p><div class='progress'><i style='width:"+p+"%'></i></div><div class='life-progress-line'><span>"+(g.target?Number(v).toLocaleString()+" / "+Number(g.target).toLocaleString()+" "+esc(g.unit):Number(v).toLocaleString()+"% tracked")+"</span><b>"+p+"%</b></div><button class='secondary' onclick='updateLifeProgress(\\\""+g.id+"\\\")'>UPDATE PROGRESS</button></div>"});o+="</div>"});return o}
-
-function priorityScore(t){if(!t)return 0;const topic=topicById(t.topicId);let score=100-(t.order||0)*.05;if(t.scheduledDate<today())score+=45;if(t.status==="IN PROGRESS")score+=35;if(topic?.difficulty==="Advanced")score+=8;if(topic?.section==="Marketing Strategy"||topic?.section==="Branding")score+=6;return Math.round(score)}
-function adaptiveNextTask(){const pool=state.tasks.filter(t=>!completed(t));if(!pool.length)return null;return pool.filter(t=>t.scheduledDate<=today()).sort((a,b)=>priorityScore(b)-priorityScore(a))[0]||nextTask()}
-function missionOfDay(){const marketing=adaptiveNextTask(),life=lifeTodayTasks().find(t=>t.status!=="COMPLETED");if(marketing)return{type:"MARKETING",title:marketing.title,detail:"Complete the highest-priority unfinished Marketing action.",minutes:marketing.estimated||25,action:"openTask('"+marketing.id+"')"};if(life)return{type:"LIFE",title:life.title,detail:life.description,minutes:life.estimated||25,action:"navigate('life')"};return{type:"SYSTEM",title:"Life system review",detail:"Review priorities and prepare the next focused action.",minutes:10,action:"navigate('life')"}}
-function jessieEvolutionLabel(){return ["INITIALIZATION","PRESENCE","FACE ONLINE","FORMING","TORSO ONLINE","STRUCTURE","BODY ONLINE","DETAILS","DIMENSION","AWAKENED","COMPLETE"][stage()]||"INITIALIZATION"}
-function systemHealth(){return [["FINANCE",lifeGoalPct(LIFE_GOALS.find(g=>g.id==="save10"))],["EDUCATION",overallPct()],["LANGUAGES",lifeGoalPct(LIFE_GOALS.find(g=>g.id==="italian"))],["THE VIBE B",Math.max(lifeGoalPct(LIFE_GOALS.find(g=>g.id==="vibebrand")),lifeGoalPct(LIFE_GOALS.find(g=>g.id==="vibelogo")),lifeGoalPct(LIFE_GOALS.find(g=>g.id==="instagram")))],["AI / TECH",Math.max(lifeGoalPct(LIFE_GOALS.find(g=>g.id==="ai")),lifeGoalPct(LIFE_GOALS.find(g=>g.id==="website")),lifeGoalPct(LIFE_GOALS.find(g=>g.id==="cyber")))]]}
-function monthlyReview(){const p=today().slice(0,7),completedCount=state.tasks.filter(t=>t.completionDate?.startsWith(p)).length+state.lifeTasks.filter(t=>t.completionDate?.startsWith(p)).length,minutes=state.sessions.filter(x=>x.date?.startsWith(p)).reduce((a,b)=>a+b.duration,0),stalled=LIFE_GOALS.filter(g=>lifeGoalPct(g)===0).slice(0,4);return{completedCount,minutes,stalled}}
-function dailyBriefingHTML(){const m=missionOfDay(),health=systemHealth(),r=monthlyReview();return '<div class="jessie-briefing"><div class="briefing-top"><div><div class="eyebrow">JESSIE DAILY BRIEFING</div><h2>SYSTEM STATUS: <span>STABLE</span></h2><p>JESSIE scanned your current goals and selected the next meaningful move.</p></div><div class="briefing-state"><b>'+esc(jessieEvolutionLabel())+'</b><small>JESSIE EVOLUTION</small></div></div><div class="briefing-grid"><div class="briefing-mission"><small>MISSION OF THE DAY</small><b>'+esc(m.title)+'</b><span>'+esc(m.detail)+'</span><em>'+m.minutes+' MIN · '+esc(m.type)+'</em><button class="primary" onclick="'+m.action+'">START MISSION →</button></div><div class="briefing-scan"><small>SYSTEM SCAN</small>'+health.map(x=>'<div class="scan-row"><span>'+esc(x[0])+'</span><i><b style="width:'+Math.min(100,Math.max(4,x[1]))+'%"></b></i><em>'+Math.round(x[1])+'%</em></div>').join("")+'</div><div class="briefing-stats"><div><small>STREAK</small><b>'+currentStreak()+' DAYS</b></div><div><small>THIS MONTH</small><b>'+r.completedCount+' ACTIONS</b></div><div><small>STUDY TIME</small><b>'+Math.round(r.minutes/60*10)/10+' H</b></div></div></div></div>'}
-function openMonthlyReview(){const r=monthlyReview();showOverlay('<button class="overlay-close" onclick="closeOverlay()">×</button><div class="eyebrow">JESSIE MONTHLY REVIEW</div><h2>SYSTEM REVIEW</h2><div class="grid g3" style="margin:18px 0"><div class="mini-card"><small>ACTIONS</small><b>'+r.completedCount+'</b><span>completed this month</span></div><div class="mini-card"><small>STUDY TIME</small><b>'+Math.round(r.minutes/60*10)/10+' H</b><span>recorded focus</span></div><div class="mini-card"><small>JESSIE STATE</small><b>'+esc(jessieEvolutionLabel())+'</b><span>'+overallPct()+'% marketing</span></div></div><div class="section-head"><h3>Needs attention</h3><span>SYSTEM SIGNAL</span></div><div class="card">'+(r.stalled.length?r.stalled.map(g=>'<div class="milestone"><div class="dot">!</div><div><b>'+esc(g.title)+'</b><small>No tracked progress yet — choose one small next action.</small></div></div>').join(""):'<p style="color:var(--muted)">No zero-progress goal signals detected.</p>')+'</div><button class="primary" onclick="closeOverlay()">CONTINUE →</button>')}
-function showBootSequence(){
- const overlay=document.getElementById("overlay"),card=document.getElementById("overlayCard");
- if(!overlay||!card)return;
- if(sessionStorage.getItem("jessieBootV2")){render("dashboard");return;}
- card.innerHTML='<div class="jessie-boot jessie-boot-v2"><div class="boot-orbit"></div><div class="boot-core">J</div><div class="eyebrow">JESSIE LIFE OS</div><h2>SYSTEM BOOT</h2><p>ALL SYSTEMS READY · AWAITING USER COMMAND</p><div class="boot-lines"><span>FINANCE</span><span>EDUCATION</span><span>LANGUAGES</span><span>PROJECTS</span><span>AI / TECH</span></div><div class="boot-music"><div class="boot-music-label">SYSTEM AUDIO · I DANCE TO FORGET</div><div id="jessie-youtube-player" class="boot-youtube"></div><button class="primary boot-enter" onclick="enterJessieSystem()">ENTER SYSTEM · PLAY MUSIC →</button><button id="jessie-music-retry" class="ghost boot-retry" hidden onclick="retrySystemMusic()">RETRY AUDIO</button></div><small class="boot-note">Click once to unlock audio playback in your browser.</small></div>';
- overlay.classList.remove("hidden");
- prepareSystemMusic();
-}
-
-const V={
-dashboard(){ensureDaily();const tasks=todayTasks(),done=todayDone(),next=adaptiveNextTask()||nextTask(),mission=missionOfDay();
-const pct=(v)=>Math.min(100,Math.max(0,Math.round(v||0)));const goal=(id)=>pct(lifeGoalPct(LIFE_GOALS.find(g=>g.id===id)));
-const finance=goal("save10"),vibe=Math.max(goal("vibebrand"),goal("vibelogo"),goal("instagram")),edu=overallPct(),tech=Math.max(goal("cyber"),goal("website"),goal("ai")),personal=Math.round((goal("wardrobe")+goal("hair")+goal("laser"))/3);
-const systems=[["FINANCE",finance,"◉"],["EDUCATION",edu,"▣"],["THE VIBE B",vibe,"♛"],["TECH",tech,"⌘"],["PERSONAL",personal,"♡"]];
-return `
-<div class="neo-dashboard">
-<div class="neo-top"><div><span class="neo-kicker">${esc(datePretty())} · JESSIE LIFE OS · SYSTEM 2027</span><h1>Good Morning, Jessie.<i>✦</i></h1><p>YOUR LIFE IS A SYSTEM. JESSIE MANAGES THE NEXT STEP.</p></div><div class="neo-actions"><button class="neo-round" onclick="startSystemMusic(true)" title="Play system music">♫</button><button class="neo-start" onclick="navigate('study')">START STUDY <b>→</b></button></div></div>
-<div class="neo-stage">
-<aside class="neo-side neo-left"><div class="neo-hud"><span class="neo-hud-title">TODAY / TIMELINE</span><div class="neo-timeline"><div><b>08:00</b><i></i><span>MORNING ROUTINE<small>Hydrate · Journal · Plan</small></span></div><div><b>09:30</b><i></i><span>ITALIAN DAILY<small>365-day language cycle</small></span></div><div class="hot"><b>12:00</b><i></i><span>${esc(next?.name||"MARKETING MISSION")}<small>${esc(next?.section||"Highest-priority action")}</small></span></div><div><b>15:00</b><i></i><span>RESET / HEALTH<small>Move · recharge · return</small></span></div><div><b>19:00</b><i></i><span>THE VIBE B<small>Build the brand</small></span></div><div><b>22:00</b><i></i><span>NIGHT REVIEW<small>Reflect · plan tomorrow</small></span></div></div></div><div class="neo-hud neo-mini"><span class="neo-hud-title">SYSTEM PRINCIPLE</span><strong>THE USER SETS<br>THE DIRECTION.</strong><small>JESSIE MANAGES THE NEXT STEP.</small></div></aside>
-<section class="neo-core"><div class="neo-core-glow"></div><div class="neo-grid"></div><div class="neo-ring ring-a"></div><div class="neo-ring ring-b"></div><div class="neo-ring ring-c"></div><div class="neo-scanline"></div><div class="neo-particle np1"></div><div class="neo-particle np2"></div><div class="neo-particle np3"></div>
-<div class="dashboard-jessie-float fd-jessie neo-jessie"><div class="jessie-float-aura"></div><div class="jessie-float-grid"></div><div class="jessie-float-ring ring-one"></div><div class="jessie-float-ring ring-two"></div><div class="jessie-float-ring ring-three"></div><div class="jessie-float-scan"></div><div class="jessie-orbit orbit-a"></div><div class="jessie-orbit orbit-b"></div><div class="jessie-planet planet-a"></div><div class="jessie-planet planet-b"></div><div class="jessie-planet planet-c"></div><img src="jessie-reference.jpg" alt="JESSIE"><div class="jessie-float-label">JESSIE <span>ONLINE · SCANNING</span></div></div>
-<div class="neo-jessie-stats"><small>JESSIE AI COMPANION</small><b>ANALYZING...</b><span>FOCUS <em>92%</em></span><span>ENERGY <em>84%</em></span><span>PROGRESS <em>${pct(edu)}%</em></span><span>STREAK <em>${currentStreak()}D</em></span></div><div class="neo-orbit-label label-top">LIFE OS / CORE</div><div class="neo-orbit-label label-bottom">SCANNING LIFE SYSTEMS · ALL SYSTEMS OPERATIONAL</div></section>
-<aside class="neo-side neo-right"><div class="neo-hud"><span class="neo-hud-title">SYSTEM STATUS <b>STABLE</b></span><small class="neo-muted">All systems operational.</small><div class="neo-bars"><div><span>FOCUS</span><i><b style="width:92%"></b></i><em>92</em></div><div><span>ENERGY</span><i><b style="width:84%"></b></i><em>84</em></div><div><span>PROGRESS</span><i><b style="width:${pct(edu)}%"></b></i><em>${pct(edu)}</em></div></div></div><div class="neo-hud neo-reward"><span class="neo-hud-title">REWARD SYSTEM <b>LOCKED</b></span><div class="neo-gift"><div class="fd-gift-holo-grid"></div><div class="fd-gift-holo-ring ring-a"></div><div class="fd-gift-holo-ring ring-b"></div><div class="fd-gift-holo-scan"></div><div class="fd-gift-spark s1"></div><div class="fd-gift-spark s2"></div><div class="fd-gift-spark s3"></div><div class="fd-gift"><i></i><b></b><span></span></div></div><strong>MISSION → REWARD</strong><small>Complete today's mission to unlock your reward.</small></div></aside>
-</div>
-<div class="neo-mission"><div><span>✦ MISSION OF THE DAY</span><small>${mission.minutes} MIN · ${esc(mission.type)}</small><h2>${esc(mission.title)}</h2><p>${esc(mission.detail)}</p></div><button class="primary" onclick="${mission.action}">START MISSION →</button></div>
-<div class="neo-bottom"><div class="neo-hud neo-systems"><span class="neo-hud-title">LIFE SYSTEMS</span><div class="neo-system-orbit">${systems.map((x,n)=>`<div class="neo-system s${n}"><i>${x[2]}</i><b>${esc(x[0])}</b><small>${pct(x[1])}%</small></div>`).join("")}</div></div><div class="neo-hud neo-quick"><span class="neo-hud-title">QUICK ACCESS</span><button onclick="navigate('life')">ITALIAN 365 <small>Daily cycle</small><b>→</b></button><button onclick="navigate('study')">MARKETING <small>Continue curriculum</small><b>→</b></button><button onclick="navigate('library')">JESSIE LIBRARY <small>Resources</small><b>→</b></button></div><div class="neo-hud neo-vision"><span class="neo-hud-title">2027 VISION</span><div class="neo-months">${["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"].map((m,n)=>`<i class="${n===9?"now":""}">${m}</i>`).join("")}</div><strong>BUILD THE LIFE.<br>ONE SYSTEM AT A TIME.</strong></div></div>
-</div>`},study(){ensureDaily();const task=todayTasks()[0]||nextTask();if(!task)return `<div class="card hero"><div class="eyebrow">STUDY MODE</div><h2>Curriculum complete.</h2><p>There is no unfinished curriculum task remaining.</p></div>`;const topic=topicById(task.topicId), mats=materialFor(task.id);return `<div class="study-layout"><div class="card study-focus ${timer.running?"complete-flash":""}"><div class="eyebrow">CURRENT TASK · ${esc(topic.section)}</div><h2>${esc(topic.name)}</h2><p class="objective">${esc(topic.objective)}</p><div class="mini-card" style="margin-top:17px"><small>OBJECTIVE</small><b>${esc(topic.objective)}</b><span>${task.estimated} min · ${esc(task.difficulty)} · ${task.status}</span></div><div class="timer" id="timer">${timer.taskId===task.id?fmt(timer.seconds):"00:00"}</div><div class="buttons"><button class="primary" onclick="${timer.running?"pauseSession()":`startSession('${task.id}')`}">${timer.running?"PAUSE FOCUS":"START STUDY"}</button><button class="secondary" onclick="completeTask('${task.id}')">COMPLETE</button><button class="secondary" onclick="skipTask('${task.id}')">SKIP</button></div><textarea class="notes" placeholder="Notes for this topic…" onchange="saveNote('${topic.id}',this.value)">${esc(state.notes[topic.id]||"")}</textarea></div>
-<div class="card"><div class="eyebrow">RELEVANT MATERIALS</div>${mats.length?mats.map(m=>`<div class="material-item"><b>${esc(m.title)}</b><p>${esc(m.type)} · ${esc(m.tags||"")}</p>${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">Open reference ↗</a>`:""}</div>`).join(""):`<p style="color:var(--dim);font-size:11px;line-height:1.7;margin-top:15px">No saved materials are linked to this topic yet. Add one in JESSIE Library.</p>`}<button class="secondary" style="margin-top:15px" onclick="openLibraryFor('${topic.id}')">ADD MATERIAL</button><div class="section-head"><h3>Study memory</h3><span>${state.notes[topic.id]?"NOTE SAVED":"NO NOTE YET"}</span></div><p style="color:var(--muted);font-size:10px;line-height:1.7">JESSIE remembers this topic's notes, completion state, sessions and related resources locally.</p></div></div>`},
-tasks(){ensureDaily();const todayItems=state.tasks.filter(t=>t.scheduledDate===today()).sort((a,b)=>a.order-b.order);return `<div class="card"><div class="section-head" style="margin-top:0"><h3>Today's Tasks</h3><span>${todayDone().length}/${todayItems.length} COMPLETE</span></div><p style="color:var(--muted);font-size:11px;line-height:1.7">Generated automatically from the curriculum. Unfinished tasks follow you until completed.</p><div class="task-list">${todayItems.map(t=>taskHTML(t)).join("")}</div></div>`},
-roadmap(){return `<div class="card"><div class="eyebrow">MARKETING ROADMAP</div><h2 style="font:600 30px 'Playfair Display';margin:8px 0 25px">Twelve sections. One continuous path.</h2>${CURRICULUM.map((s,i)=>{let p=sectionPct(s),cur=s.id===currentTopic()?.sectionId;return `<div class="road ${p>=100?"complete":cur?"current":""}"><i class="road-node"></i><h4>${String(i+1).padStart(2,"0")} — ${esc(s.name)}</h4><p>${p}% · ${s.topics.filter(t=>topicComplete(t.id)).length}/${s.topics.length} topics complete</p></div>`}).join("")}</div><div class="section-head"><h3>Current section topics</h3><span>${esc(currentTopic()?.section||"COMPLETE")}</span></div><div class="card"><div class="topic-grid">${(CURRICULUM.find(s=>s.id===currentTopic()?.sectionId)?.topics||[]).map(t=>`<div class="topic ${topicComplete(t.id)?"done":""}"><b>${esc(t.name)}</b><small>${topicComplete(t.id)?"COMPLETED":"NOT STARTED"}</small><button class="secondary" onclick="openTopic('${t.id}')">VIEW</button></div>`).join("")}</div></div>`},
-library(){return `<div class="card"><div class="eyebrow">JESSIE LIBRARY</div><h2 style="font:600 30px 'Playfair Display';margin:8px 0">Your learning materials, connected to the work.</h2><div class="library-tools"><input id="matTitle" class="input" placeholder="Material title"><input id="matUrl" class="input" placeholder="https://…"><select id="matType" class="select"><option>Article</option><option>YouTube</option><option>PDF</option><option>Website</option><option>Course</option><option>Document</option><option>Resource</option></select><select id="matTopic" class="select"><option value="">Auto / unassigned</option>${TOPICS.map(t=>`<option value="${t.id}">${esc(t.section)} · ${esc(t.name)}</option>`).join("")}</select><button class="primary" onclick="addMaterial()">SAVE REFERENCE</button></div><div class="library-grid">${state.materials.length?state.materials.map(m=>`<div class="resource"><span class="tag">${esc(m.type)}</span><h4>${esc(m.title)}</h4><p>${esc(m.notes||"Reference saved — content analysis unavailable unless metadata was explicitly supplied.")}</p><small style="color:var(--dim);font-size:8px">${esc(m.topicId?topicById(m.topicId)?.name:"UNASSIGNED")}</small><div style="margin-top:9px">${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.url)}</a>`:"Local reference"}</div><button class="task-action" onclick="deleteMaterial('${m.id}')">REMOVE</button></div>`).join(""):`<div style="grid-column:1/-1;padding:35px;text-align:center;color:var(--dim)">No materials yet. Save a reference and JESSIE will connect it to the matching topic.</div>`}</div></div>`},
-progress(){const p=overallPct(),mins=studyMinutes(),s=stage();const milestones=milestoneList();const days=[...Array(14)].map((_,i)=>{let d=dObj(today());d.setDate(d.getDate()-13+i);let key=iso(d);return {key,n:state.sessions.filter(x=>x.date===key).reduce((a,b)=>a+b.duration,0)}});return `<div class="grid g3"><div class="card character-stage"><div class="jessie" data-stage="${s}"><div class="silhouette"></div><div class="energy"></div><div class="jlayer head"></div><div class="jlayer torso"></div><div class="jlayer lower"></div><div class="jlayer detail"></div></div><div class="evolution-label"><b>${stageName()}</b><small>JESSIE BUILD · ${p}%</small></div></div><div class="card metric"><div class="label">Curriculum</div><div class="value gold">${p}%</div><div class="sub">${generatedCompletedCount()} / ${totalTasks()} topics</div><div class="progress"><i style="width:${p}%"></i></div><div style="margin-top:25px"><div class="label">Current section</div><div class="value" style="font-size:20px">${esc(currentTopic()?.section||"Complete")}</div><div class="sub">${esc(currentTopic()?.name||"")}</div></div></div><div class="card metric"><div class="label">Study Hours</div><div class="value">${(mins/60).toFixed(1)}</div><div class="sub">actual recorded sessions</div><div style="margin-top:25px"><div class="label">Streak</div><div class="value gold">${currentStreak()}</div><div class="sub">longest ${longestStreak()} days</div></div></div></div><div class="section-head"><h3>Study activity</h3><span>LAST 14 DAYS</span></div><div class="card"><div class="chart">${days.map(x=>`<div class="bar" style="height:${Math.max(5,Math.min(100,x.n*4))}%"><small>${dObj(x.key).getDate()}</small></div>`).join("")}</div></div><div class="section-head"><h3>Milestones</h3><span>${milestones.filter(x=>x[2]).length}/${milestones.length}</span></div><div class="card">${milestones.map(m=>`<div class="milestone ${m[2]?"done":""}"><div class="dot">${m[2]?"✓":"·"}</div><div><b>${esc(m[1])}</b><small>${m[2]?"Unlocked":"Not reached yet"}</small></div></div>`).join("")}</div>`},
-life(){return lifeGoalsHTML()},
-settings(){return `<div class="card"><div class="eyebrow">SYSTEM SETTINGS</div><h2 style="font:600 30px 'Playfair Display';margin:8px 0 20px">Control the operating system.</h2>
-${setting("Daily study tasks","How many meaningful tasks JESSIE prepares each study day.","<input id='dailyRange' class='range' type='range' min='1' max='4' value='"+state.settings.dailyTasks+"' onchange='setDaily(this.value)'><b id='dailyValue'>"+state.settings.dailyTasks+"</b>")}
-${toggleSetting("voice","Voice interaction","Short contextual voice messages using browser speech synthesis.")}
-${toggleSetting("sound","Sound + soundscape","Optional generated ambient layer and UI tones.")}
-${toggleSetting("reminders","Reminder readiness","Keeps reminder settings available without forcing browser notifications.")}
-${toggleSetting("reducedMotion","Reduced motion","Preserve functionality while minimizing cinematic movement.")}
-<div class="settings-row"><div><b>Animation intensity</b><p>Choose how strongly JESSIE uses cinematic motion.</p></div><select class="select" onchange="state.settings.animation=this.value;save()"><option ${state.settings.animation==="cinematic"?"selected":""}>cinematic</option><option ${state.settings.animation==="subtle"?"selected":""}>subtle</option></select></div>
-<div class="settings-row"><div><b>Voice volume</b><p>Browser-native speech volume.</p></div><input class="range" type="range" min="0" max="1" step=".05" value="${state.settings.voiceVolume}" onchange="state.settings.voiceVolume=+this.value;save()"></div>
-<div class="settings-row"><div><b>Soundscape volume</b><p>Ambient oscillator volume.</p></div><input class="range" type="range" min="0" max=".5" step=".05" value="${state.settings.soundVolume}" onchange="state.settings.soundVolume=+this.value;save()"></div>
-<div class="settings-row"><div><b>Data</b><p>Export or restore the entire local system.</p></div><div class="buttons"><button class="secondary" onclick="exportData()">EXPORT</button><label class="secondary">IMPORT<input type="file" accept="application/json" hidden onchange="importData(this.files[0])"></label></div></div>
-<div class="settings-row"><div><b>Recycle system</b><p>Clear task history and restart the learning engine from Study Day 1 — October 1, 2026.</p></div><div class="buttons"><button class="secondary recycle-btn" onclick="resetType('tasks')">♻ RECYCLE TASKS</button><button class="secondary" onclick="resetType('character')">RESET JESSIE</button><button class="secondary" onclick="resetType('all')">RESET ALL</button></div></div>
-</div>`},
-topic(id){const t=topicById(id);const r=state.tasks.find(x=>x.topicId===id);const mats=state.materials.filter(m=>m.topicId===id);return `<div class="card"><button class="secondary" onclick="navigate('roadmap')">← ROADMAP</button><div class="eyebrow" style="margin-top:20px">${esc(t.section)}</div><h2 style="font:600 32px 'Playfair Display';margin:7px 0">${esc(t.name)}</h2><p style="color:var(--muted);line-height:1.7">${esc(t.objective)}</p><div class="grid g3" style="margin-top:20px"><div class="mini-card"><small>STATUS</small><b>${r&&completed(r)?"COMPLETED":"NOT STARTED"}</b></div><div class="mini-card"><small>DURATION</small><b>${t.duration} MIN</b></div><div class="mini-card"><small>DIFFICULTY</small><b>${t.difficulty}</b></div></div><div class="section-head"><h3>Notes</h3><span>LOCAL MEMORY</span></div><textarea class="notes" onchange="saveNote('${t.id}',this.value)">${esc(state.notes[t.id]||"")}</textarea><div class="section-head"><h3>Related materials</h3><span>${mats.length}</span></div>${mats.map(m=>`<div class="material-item"><b>${esc(m.title)}</b><p>${esc(m.type)} · ${esc(m.notes||"")}</p></div>`).join("")||`<p style="color:var(--dim);font-size:10px">No materials linked yet.</p>`}<div class="buttons" style="margin-top:15px">${r&&!completed(r)?`<button class="primary" onclick="completeTask('${r.id}')">COMPLETE TOPIC</button>`:`<button class="secondary" onclick="createAndOpen('${t.id}')">PREPARE TOPIC TASK</button>`}<button class="secondary" onclick="openLibraryFor('${t.id}')">ADD MATERIAL</button></div></div>`}
-};
-function setting(title,desc,control){return `<div class="settings-row"><div><b>${title}</b><p>${desc}</p></div><div style="display:flex;gap:9px;align-items:center">${control}</div></div>`}
-function toggleSetting(k,title,desc){return setting(title,desc,`<button class="toggle ${state.settings[k]?"on":""}" onclick="state.settings['${k}']=!state.settings['${k}'];save();render('settings')"><i></i></button>`)}
-
-function render(v=current){current=v;ensureDaily();document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));document.getElementById("pageTitle").textContent={dashboard:"Command Center",study:"Study Mode",tasks:"Today's Tasks",roadmap:"Roadmap",library:"JESSIE Library",progress:"Progress",life:"Life Goals",settings:"Settings"}[v]||"JESSIE";document.getElementById("dateLabel").textContent=datePretty();document.getElementById("sideStreak").textContent=currentStreak();document.getElementById("view").innerHTML=(TEST_MODE?`<div class="test-banner"><div><b>TEST MODE</b><span>Today is being treated as Study Day ${studyDay()} for testing.</span></div><div class="test-actions"><button class="secondary" onclick="advanceTestDay()">NEXT TEST DAY →</button><button class="secondary" onclick="resetTestDay()">RESET TEST</button></div></div>`:"")+(V[v]?V[v]():V.dashboard())}
-function navigate(v){history.replaceState(null,"","#"+v);render(v);document.querySelector(".sidebar").classList.remove("open")}
-document.getElementById("nav").onclick=e=>{const b=e.target.closest("button[data-view]");if(b)navigate(b.dataset.view)}
-document.getElementById("mobileMenu").onclick=()=>document.querySelector(".sidebar").classList.toggle("open");
-document.getElementById("quickStart").onclick=()=>{const t=todayTasks()[0]||nextTask();if(t){openTask(t.id)}else{navigate("progress")}};
-document.getElementById("voiceBtn").onclick=()=>{state.settings.voice=!state.settings.voice;save();toast(state.settings.voice?"VOICE ON":"VOICE OFF");speak(state.settings.voice?"Voice interaction enabled.":"Voice interaction disabled.")};
-document.getElementById("soundBtn").onclick=()=>{state.settings.sound=!state.settings.sound;save();if(state.settings.sound)startAmbient();else stopAmbient();toast(state.settings.sound?"SOUND ON":"SOUND OFF")};
-
-function openTask(id){const t=taskById(id)||ensureRecord(topicById(id.replace("task-","")));if(!t)return;const topic=topicById(t.topicId);const mats=materialFor(t.id);showOverlay(`<button class="overlay-close" onclick="closeOverlay()">×</button><div class="eyebrow">NEXT STEP · ${esc(topic.section)}</div><h2>${esc(topic.name)}</h2><p style="color:var(--muted);line-height:1.7">${esc(topic.objective)}</p><div class="grid g3" style="margin:18px 0"><div class="mini-card"><small>DURATION</small><b>${t.estimated} MIN</b></div><div class="mini-card"><small>DIFFICULTY</small><b>${esc(t.difficulty)}</b></div><div class="mini-card"><small>STATUS</small><b>${esc(t.status)}</b></div></div>${mats.length?`<div class="section-head"><h3>Materials</h3><span>${mats.length}</span></div>${mats.map(m=>`<div class="material-item"><b>${esc(m.title)}</b><p>${esc(m.type)}</p></div>`).join("")}`:""}<div class="buttons" style="margin-top:18px"><button class="primary" onclick="closeOverlay();navigate('study');setTimeout(()=>startSession('${t.id}'),100)">START STUDY</button><button class="secondary" onclick="completeTask('${t.id}');closeOverlay()">COMPLETE</button></div>`)}
-function showOverlay(html){document.getElementById("overlayCard").innerHTML=html;document.getElementById("overlay").classList.remove("hidden")}
-function closeOverlay(){document.getElementById("overlay").classList.add("hidden")}
-document.getElementById("overlay").onclick=e=>{if(e.target.id==="overlay")closeOverlay()}
-
-function startSession(id){if(timer.running)return;timer.taskId=id;timer.start=Date.now();timer.seconds=0;timer.running=true;const t=taskById(id);if(t)t.status="IN PROGRESS";save();speak("Ready? Let's start today's task.");render("study");timer.interval=setInterval(()=>{timer.seconds++;const el=document.getElementById("timer");if(el)el.textContent=fmt(timer.seconds)},1000);if(state.settings.sound)tone("start")}
-function pauseSession(){if(!timer.running)return;finishSession(false);render("study")}
-function finishSession(saveSession=true){clearInterval(timer.interval);if(timer.running&&saveSession){const minutes=Math.max(1,Math.round(timer.seconds/60));state.sessions.push({id:crypto.randomUUID(),start:new Date(timer.start).toISOString(),end:new Date().toISOString(),duration:minutes,date:today(),taskId:timer.taskId})}timer.running=false;timer.interval=null;timer.seconds=0;timer.start=null;save()}
-function completeTask(id){
- const t=taskById(id)||ensureRecord(topicById(id.replace("task-","")));if(!t||completed(t))return;
- const beforePct=overallPct();
- if(timer.running&&timer.taskId===id)finishSession(true);
- else {timer.running=false;timer.taskId=null}
- t.status="COMPLETED";t.completionDate=today();t.completionTimestamp=new Date().toISOString();state.lastActivity=today();
- const newly=checkMilestones();
- const newStage=stage();
- if(newStage>state.unlocked)state.unlocked=newStage;
- save();
- const next=nextTask();
- render(current);
- setTimeout(()=>cinematicReaction(newly,newStage,t,beforePct,overallPct(),next),60);
- if(newly.length)speak(newly.length===1?"New milestone reached.":"Milestones unlocked.");else speak("Done. One step forward.");
- tone("complete");toast("COMPLETED · NEXT STEP PREPARED");
-}
-function skipTask(id){const t=taskById(id);if(!t)return;t.status="SKIPPED";t.scheduledDate=today();save();render(current);toast("SKIPPED · JESSIE WILL KEEP IT IN MEMORY")}
-function saveNote(topicId,val){state.notes[topicId]=val;save();toast("NOTE SAVED")}
-function createAndOpen(id){const t=ensureRecord(topicById(id));t.scheduledDate=today();save();openTask(t.id)}
-function openTopic(id){history.replaceState(null,"","#topic/"+id);current="topic";document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));document.getElementById("pageTitle").textContent="Topic";document.getElementById("view").innerHTML=V.topic(id)}
-function openLibraryFor(topicId){navigate("library");setTimeout(()=>{const s=document.getElementById("matTopic");if(s)s.value=topicId},0)}
-
-function addMaterial(){const title=document.getElementById("matTitle")?.value.trim(),url=document.getElementById("matUrl")?.value.trim(),type=document.getElementById("matType")?.value,topicId=document.getElementById("matTopic")?.value||null;if(!title){toast("Add a material title first");return}state.materials.push({id:crypto.randomUUID(),title,url,type,topicId,taskId:topicId?("task-"+topicId):null,notes:"Reference saved — content analysis unavailable unless metadata was explicitly supplied.",tags:"",dateAdded:today()});save();tone("nav");render("library");toast("REFERENCE SAVED")}
-function deleteMaterial(id){state.materials=state.materials.filter(x=>x.id!==id);save();render("library");toast("REFERENCE REMOVED")}
-
-function setDaily(v){state.settings.dailyTasks=+v;save();const e=document.getElementById("dailyValue");if(e)e.textContent=v;ensureDaily()}
-function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="jessie-life-os-backup.json";a.click();URL.revokeObjectURL(a.href)}
-function importData(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.tasks||!x.settings)throw Error();state=x;save();render("settings");toast("SYSTEM RESTORED")}catch{toast("Invalid backup file")}};r.readAsText(file)}
-function resetType(k){
- if(!confirm("Recycle this JESSIE system state and restart from October 1, 2026?"))return;
- if(k==="all"||k==="tasks"){state.tasks=[];state.sessions=[];state.notes={};state.lastActivity=null;}
- if(k==="all"){state.materials=[];state.unlocked=0;state.milestones={};}
- if(k==="character"){state.unlocked=0;state.milestones={};}
- save();ensureDaily();render("settings");toast(k==="character"?"JESSIE RESET":"SYSTEM RECYCLED · OCTOBER 1 START");
-}
-function finale(){showOverlay(`<button class="overlay-close" onclick="closeOverlay()">×</button><div class="eyebrow">FINAL EVOLUTION</div><h2>MARKETING CURRICULUM COMPLETE</h2><p style="color:var(--muted);line-height:1.7">Every curriculum topic is complete. JESSIE has reached the final visual state and your completed history remains intact.</p><div class="jessie reveal" data-stage="10" style="margin:25px auto"><div class="silhouette"></div><div class="energy"></div><div class="jlayer head"></div><div class="jlayer torso"></div><div class="jlayer lower"></div><div class="jlayer detail"></div></div><button class="primary" onclick="closeOverlay();render('progress')">CONTINUE →</button>`);speak("Marketing curriculum complete.")}
-function cinematicReaction(newly,stageNow,completedTask,beforePct,afterPct,next){
- const el=document.querySelector(".study-focus")||document.querySelector(".now");
- if(el){el.classList.add("complete-flash");setTimeout(()=>el.classList.remove("complete-flash"),1100)}
- const j=document.querySelector(".jessie");
- if(j){j.classList.add("reveal");setTimeout(()=>j.classList.remove("reveal"),1200)}
- if(stageNow>=10){finale();return}
- showHologramCelebration(completedTask,beforePct,afterPct,newly,stageNow,next);
-}
-
-function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
- if(state.settings.reducedMotion)return;
- const topic=topicById(t.topicId);
- const nextTopic=next?topicById(next.topicId):null;
- const stageLabel=stageName();
- const milestoneText=newly.length?`<div class="holo-milestone"><span>◈</span><div><small>MILESTONE SIGNAL</small><b>${esc(newly[0])}</b></div></div>`:"";const rewardText=`<div class="holo-milestone"><span>✦</span><div><small>REWARD UNLOCKED</small><b>Choose one intentional reward</b><small>20 min guilt-free break · favorite drink · self-care · or save the reward budget</small></div></div>`;
- showOverlay(`<div class="holo-wrap">
-   <div class="holo-grid"></div><div class="holo-scan"></div><div class="holo-orbit orbit-a"></div><div class="holo-orbit orbit-b"></div>
-   <div class="holo-topline"><span>JESSIE / COMMAND CHAMBER</span><span>SYNC ${afterPct}%</span></div>
-   <div class="holo-character"><div class="holo-ring ring-1"></div><div class="holo-ring ring-2"></div><div class="holo-beam"></div>
-     <div class="jessie holo-jessie" data-stage="${stageNow}"><div class="silhouette"></div><div class="energy"></div><div class="jlayer head"></div><div class="jlayer torso"></div><div class="jlayer lower"></div><div class="jlayer detail"></div></div>
-     <div class="holo-label">${esc(stageLabel)}<span>EVOLUTION STATE</span></div>
-   </div>
-   <div class="holo-panel panel-left"><small>MISSION COMPLETE</small><b>+1 TASK</b><span>${esc(topic?.name||t.title)}</span></div>
-   <div class="holo-panel panel-right"><small>CURRICULUM SYNC</small><b>${beforePct}% → ${afterPct}%</b><span>${esc(topic?.section||"")}</span></div>
-   <div class="holo-bottom"><div><small>NEXT OBJECTIVE</small><b>${esc(nextTopic?.name||"CURRICULUM COMPLETE")}</b></div><button class="primary" onclick="closeOverlay();setTimeout(()=>{if(${next?"true":"false"})openTask('${next?.id||""}')},120)">NEXT STEP →</button></div>
-   ${milestoneText}${rewardText}
- </div>`);
- setTimeout(()=>{const w=document.querySelector('.holo-wrap');if(w)w.classList.add('ignite')},30);
-}
-
-
-let jessieYT=null;
-let jessieYTReady=false;
-let jessieMusicPending=false;
-
-function loadJessieYouTubeAPI(){
- if(window.YT&&window.YT.Player){jessieYTReady=true;return Promise.resolve();}
- if(window.__jessieYTLoading)return window.__jessieYTLoading;
- window.__jessieYTLoading=new Promise(resolve=>{
-   window.onYouTubeIframeAPIReady=()=>{jessieYTReady=true;resolve();};
-   const tag=document.createElement("script");
-   tag.src="https://www.youtube.com/iframe_api";
-   tag.async=true;
-   document.head.appendChild(tag);
- });
- return window.__jessieYTLoading;
-}
-
-function createJessieMusicPlayer(){
- const host=document.getElementById("jessie-youtube-player");
- if(!host||jessieYT)return;
- if(!(window.YT&&window.YT.Player))return;
- jessieYT=new YT.Player(host,{
-   width:"320",height:"180",videoId:"9nN9qMW4Fek",
-   playerVars:{autoplay:0,controls:0,loop:1,playlist:"9nN9qMW4Fek",playsinline:1,rel:0,origin:location.origin},
-   events:{
-     onReady:e=>{
-       e.target.setVolume(100);
-       if(jessieMusicPending){jessieMusicPending=false;e.target.unMute();e.target.playVideo();}
-     },
-     onAutoplayBlocked:()=>showMusicRetry(),
-     onError:()=>showMusicRetry()
-   }
- });
-}
-
-function prepareSystemMusic(){
- loadJessieYouTubeAPI().then(createJessieMusicPlayer).catch(()=>{});
-}
-
-function startSystemMusic(userGesture=false){
- jessieMusicPending=!!userGesture;
- if(jessieYT){
-   try{
-     jessieYT.unMute();
-     jessieYT.setVolume(100);
-     jessieYT.playVideo();
-   }catch{}
-   return;
- }
- prepareSystemMusic();
-}
-
-function showMusicRetry(){
- const b=document.getElementById("jessie-music-retry");
- if(b)b.hidden=false;
-}
-function retrySystemMusic(){
- jessieMusicPending=true;
- if(jessieYT){
-   try{jessieYT.unMute();jessieYT.setVolume(100);jessieYT.playVideo()}catch{}
- }else prepareSystemMusic();
-}
-function enterJessieSystem(){
- startSystemMusic(true);
- const overlay=document.getElementById("overlay");
- if(overlay)overlay.classList.add("hidden");
- render("dashboard");
- toast("JESSIE ONLINE · SYSTEM MUSIC ACTIVE");
-}
-
-function speak(text){if(!state.settings.voice||!("speechSynthesis"in window))return;const u=new SpeechSynthesisUtterance(text);u.volume=state.settings.voiceVolume;u.rate=.92;u.pitch=.88;speechSynthesis.cancel();speechSynthesis.speak(u)}
-function tone(kind){if(!state.settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audio.ctx)audio.ctx=new C();const c=audio.ctx,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=kind==="complete"?720:kind==="start"?220:420;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime((state.settings.soundVolume||.2)*.25,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.32);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch{}}
-function startAmbient(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(audio.ctx)audio.ctx.resume();else audio.ctx=new C();const c=audio.ctx,g=c.createGain(),o=c.createOscillator();g.gain.value=(state.settings.soundVolume||.2)*.08;o.type="sine";o.frequency.value=55;o.connect(g).connect(c.destination);o.start();audio.ambient=o;audio.master=g}catch{}}
-function stopAmbient(){try{audio.ambient?.stop()}catch{}audio.ambient=null}
-function parseRoute(){const h=location.hash.slice(1)||"dashboard";if(h.startsWith("topic/")){openTopic(h.slice(6));return}navigate(V[h]?h:"dashboard")}
-window.addEventListener("hashchange",parseRoute);window.addEventListener("beforeunload",()=>{if(timer.running)finishSession(true)});window.addEventListener("keydown",e=>{if(e.key==="Escape")closeOverlay()});
-ensureDaily();parseRoute();if(state.settings.sound)startAmbient();startSystemMusic(false);showBootSequence();
+["Marketing Management",["Marketing Leadership","Team Structure","Agency Management","Campaign Planning","Resource Allocation","Marketing Operations","Stakeholder Management","Reporting","Risk Management","Integrated Campaigns","Strategic Review"]]];
+const TOPICS=[];CURRICULUM.forEach((s,a)=>s[1].forEach((n,b)=>TOPICS.push({id:"m"+a+"-"+b,section:s[0],name:n,minutes:25})));
+const GOALS=[
+["fin40","FINANCE","40,000 EGP starting capital",40000,"EGP"],["save10","FINANCE","10,000 EGP side savings fund",10000,"EGP"],["emergency10","FINANCE","10,000 EGP expense emergency reserve",10000,"EGP"],["car100","FINANCE","100,000 EGP vehicle down payment",100000,"EGP"],["moneyfellows","FINANCE","Money Fellows toward 1,000,000 EGP",1000000,"EGP"],["budget","FINANCE","Daily spending + budget",100,"%"],["debt","FINANCE","Reduce borrowing + repay debts",100,"%"],["rewards","FINANCE","Personal rewards without harming savings",100,"%"],
+["dm1","EDUCATION","Digital Marketing Course 1 — 12 sessions",12,"sessions"],["dm2","EDUCATION","Digital Marketing Diploma 2 — 4 sessions",4,"sessions"],["dmpro","EDUCATION","Digital Marketing basics → advanced",100,"%"],["design","EDUCATION","Graphic Design + practical application",100,"%"],["wedding","WEDDING","Wedding Planning Diploma / Course",5000,"EGP"],["cyber","TECH","Ethical Hacking / Cybersecurity",100,"%"],["website","TECH","Build websites from scratch + AI",100,"%"],["aihr","TECH","AI + HR Diplomas in H1",4000,"EGP"],["aieng","TECH","AI Engineering + Humanoid Diploma in H2",8000,"EGP"],["ai","TECH","Advanced practical AI systems",100,"%"],
+["english","LANGUAGES","Super English",100,"%"],["italian","LANGUAGES","Italian every day for 365 days",365,"days"],["drivecar","DRIVING","Learn car driving",8000,"EGP"],["drivebike","DRIVING","Learn motorcycle riding",4000,"EGP"],
+["wardrobe","STYLE","Full wardrobe refresh",100,"%"],["bag","STYLE","Travel bag",6000,"EGP"],["hair","STYLE","New hairstyle",6000,"EGP"],["laser","STYLE","Start laser",4000,"EGP"],
+["vibebrand","THE VIBE B","Luxury Wedding Planner brand",100,"%"],["vibelogo","THE VIBE B","Unconventional logo + identity",100,"%"],["vibeapply","THE VIBE B","Apply learning directly to The Vibe B",100,"%"],["instagram","THE VIBE B","Professional Instagram + digital presence",100,"%"],
+["name","ADMIN","Study changing name / title",15000,"EGP"],["passport","ADMIN","Passport after name / title change",10000,"EGP"],["lifeos","SYSTEM","Goal → Milestones → Monthly → Weekly → Daily",100,"%"],["birthday","PERSONAL","February birthday plan",100,"%"]];
+const PHASES=[["Foundation",1,30,"pronunciation, greetings, numbers, basic phrases, essere / avere"],["A1 Core",31,90,"articles, gender, present tense, family, routines, food, directions"],["A1 Consolidation",91,150,"past basics, listening, reading, short writing, conversation"],["A2 Core",151,210,"passato prossimo, imperfect foundations, pronouns, travel"],["A2 Expansion",211,270,"longer listening, opinions, connectors, problem solving"],["B1 Foundation",271,330,"narration, opinions, explanations, workplace/travel language"],["B1 Consolidation",331,365,"conversation, presentations, writing, AI conversations"]];
+const MONTHS=[
+["JAN","RESET / STYLE / FOUNDATIONS",["wardrobe","bag","hair","laser","wedding","vibelogo"]],["FEB","BIRTHDAY / WEDDING / BRAND",["birthday","wedding","vibelogo","vibebrand","instagram"]],["MAR","MARKETING APPLICATION / DESIGN",["dm1","dm2","dmpro","design","vibeapply"]],["APR","CYBERSECURITY / DRIVING",["cyber","drivecar","drivebike","english"]],["MAY","WEBSITE / WEB SECURITY",["website","cyber","ai","vibeapply"]],["JUN","MID-YEAR CONSOLIDATION",["cyber","english","dmpro","vibebrand","lifeos"]],["JUL","AI ENGINEERING H2",["aieng","ai","website","cyber"]],["AUG","AI + VIBE B SYSTEMS",["aieng","ai","vibebrand","instagram"]],["SEP","GROWTH / ANALYTICS / PORTFOLIO",["dmpro","vibeapply","instagram","website","design"]],["OCT","DRIVING / TECHNICAL EXECUTION",["drivecar","drivebike","website","cyber","ai"]],["NOV","FINANCE / ADMIN / STABILITY",["fin40","save10","emergency10","car100","debt","name","passport"]],["DEC","CLOSEOUT / 2028 LAUNCH",["fin40","save10","emergency10","moneyfellows","lifeos","vibebrand","ai"]]];
+const VIBE=[["SIGNATURE","Key symbol + luxury positioning"],["IDENTITY","Logo + visual language"],["OFFER","Wedding planning architecture"],["PRESENCE","Instagram + digital home"],["AUTHORITY","Content + marketing engine"],["EXPERIENCE","Premium client system"]];
+function seed(){return{done:{},life:{},rewards:[],daily:2}}let S=load(),view="dashboard";
+function load(){try{return Object.assign(seed(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){return seed()}}function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function date(){let q=new URLSearchParams(location.search).get("date");return q&&/^\\d{4}-\\d\\d-\\d\\d$/.test(q)?q:new Date().toISOString().slice(0,10)}
+function dt(s){let a=s.split("-").map(Number);return new Date(a[0],a[1]-1,a[2])}function diff(a,b){return Math.floor((dt(b)-dt(a))/864e5)}function day(){return Math.max(1,diff(LS,date())+1)}
+function pct(n){return Math.max(0,Math.min(100,Math.round(n||0)))}function gv(id){return Number(S.life[id]||0)}
+function gp(g){return g[0]==="italian"?pct(Math.max(gv("italian"),date()>=LS?Math.min(365,day()):0)/365*100):pct(gv(g[0])/(g[3]||100)*100)}
+function mp(){return pct(TOPICS.filter(t=>S.done[t.id]).length/TOPICS.length*100)}
+function cat(c){let a=GOALS.filter(g=>g[1]===c);return pct(a.reduce((n,g)=>n+gp(g),0)/(a.length||1))}
+function phase(){let d=day();return PHASES.find(p=>d>=p[1]&&d<=p[2])||PHASES[6]}
+function skill(){return["Vocabulary","Grammar","Listening","Speaking","Reading","Writing","AI Conversation"][(day()-1)%7]}
+function month(){return MONTHS[dt(date()).getMonth()]||MONTHS[0]}
+function monthFocus(){return["Audit wardrobe and set budget.","Start Wedding Planning and build birthday plan.","Turn Marketing lessons into Vibe B assets.","Build cybersecurity + driving foundations.","Ship website + security improvements.","Consolidate skills and audit the brand.","Launch AI Engineering track.","Build AI/Vibe B systems.","Measure growth and portfolio.","Execute driving + technical milestones.","Stabilize finance + admin.","Close 2027 and design 2028."][dt(date()).getMonth()]}
+function missions(){
+let a=TOPICS.filter(t=>!S.done[t.id]).slice(0,Number(S.daily)||2).map(t=>({id:"m-"+t.id,title:t.name,detail:t.section+" · practical Marketing action",min:t.minutes}));
+if(date()>=LS){let d=day();a.push({id:"it-"+d,title:d%7===0?"Italian weekly review + AI conversation":"Italian · "+skill(),detail:"Day "+d+" · "+phase()[0]+" · "+phase()[3],min:d%7===0?40:25});let m=month();let gid=m[2][Math.floor((d-1)/7)%m[2].length];let g=GOALS.find(x=>x[0]===gid);a.push({id:"life-"+d,title:m[0]+" · "+["PLAN","LEARN","PRACTICE","BUILD","APPLY","REVIEW","WEEKLY REVIEW"][(d-1)%7],detail:"Advance: "+(g?g[2]:"the life system")+" · "+monthFocus(),min:30})}return a}
+function done(id){return!!S.done[id]}
+function finish(id,title){if(done(id))return;S.done[id]=Date.now();S.rewards.unshift({date:date(),title:title});save();toast("COMPLETED · REWARD UNLOCKED");modal("<span class='eyebrow'>REWARD PROTOCOL</span><h3>"+esc(title)+"</h3><p>Your action moved the system forward. Pick one intentional reward.</p><div class='card reward'><b>✦ 20-minute guilt-free break</b><p>Or a favorite drink, self-care, or bank the reward budget for a larger milestone.</p></div><button class='action' data-act='close'>CONTINUE</button>");render(view)}
+function toast(x){let t=document.getElementById("toast");t.textContent=x;t.classList.add("show");clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove("show"),2200)}
+function modal(x){document.getElementById("modalCard").innerHTML=x;document.getElementById("modal").classList.remove("hidden")}function close(){document.getElementById("modal").classList.add("hidden")}
+function stat(a,b,c,k){return"<div class='card stat'><small>"+esc(a)+"</small><b class='"+(k||"")+"'>"+esc(b)+"</b><span>"+esc(c)+"</span></div>"}
+function goal(g){let p=gp(g);return"<div class='card goal'><span class='tag'>"+esc(g[1])+"</span><h4>"+esc(g[2])+"</h4><div class='progress'><i style='width:"+p+"%'></i></div><div class='ptext'><span>"+gv(g[0]).toLocaleString()+" / "+g[3].toLocaleString()+" "+esc(g[4])+"</span><b>"+p+"%</b></div><button class='action' data-act='goal' data-id='"+g[0]+"'>UPDATE</button></div>"}
+function task(t){let d=done(t.id);return"<div class='card mission'><button class='check "+(d?"done":"")+"' data-act='done' data-id='"+esc(t.id)+"' data-title='"+esc(t.title)+"'>"+(d?"✓":"")+"</button><div class='mission-main'><b>"+esc(t.title)+"</b><span>"+esc(t.detail)+"</span></div><span class='pill'>"+t.min+" MIN</span></div>"}
+function dashboard(){let m=missions(),p=month();return"<div class='card hero'><span class='eyebrow'>NEXUS COMMAND / "+(date()<LS?"2027 PREVIEW":"DAY "+day())+"</span><h1>Make the <em>next move</em> obvious.</h1><p>"+esc(m[0]?m[0].title:"System review")+" · "+esc(m[0]?m[0].detail:"Review your systems and prepare tomorrow.")+"</p><button class='action' data-act='nav' data-id='missions'>EXECUTE TODAY →</button><div class='hero-orbit'></div></div><div class='section-title'><h3>System telemetry</h3><span>LIVE</span></div><div class='grid g4'>"+stat("MARKETING",mp()+"%","145 topics","cyan")+stat("LANGUAGES",cat("LANGUAGES")+"%","English + Italian","violet")+stat("THE VIBE B",cat("THE VIBE B")+"%","Luxury Wedding Planner","pink")+stat("FINANCE",cat("FINANCE")+"%","Capital / savings / reserve","gold")+"</div><div class='section-title'><h3>Today</h3><span>"+m.length+" NODES</span></div><div class='grid g2'>"+m.slice(0,4).map(task).join("")+"</div><div class='section-title'><h3>Current vector</h3><span>"+p[0]+"</span></div><div class='grid g3'>"+stat("MONTH",p[1],"Primary vector","cyan")+stat("WEEK","W"+(Math.floor((dt(date()).getDate()-1)/7)+1),monthFocus(),"violet")+stat("EVOLUTION",mp()<10?"DORMANT":mp()<25?"PRESENCE":mp()<50?"FORMING":mp()<75?"BODY ONLINE":"AWAKENED","Marketing engine","lime")+"</div>"}
+function missionsPage(){let m=missions();return"<div class='card hero'><span class='eyebrow'>MISSION CONTROL</span><h1>Today has a <em>small surface.</em></h1><p>The system can hold huge ambitions. You only execute the next nodes.</p></div><div class='section-title'><h3>Queue</h3><span>"+m.length+" ACTIONS</span></div><div class='grid g2'>"+m.map(task).join("")+"</div>"}
+function life(){return"<div class='card hero'><span class='eyebrow'>2027 LIFE MAP</span><h1>One year. <em>Many worlds.</em></h1><p>Financial stability, education, languages, technology, driving, style, Wedding Planning, The Vibe B, admin and personal milestones are coordinated here.</p></div><div class='section-title'><h3>12-month architecture</h3><span>GOAL → MONTH → WEEK → DAY</span></div><div class='grid g3'>"+MONTHS.map((m,i)=>"<div class='card goal'><span class='tag'>"+m[0]+"</span><h4>"+m[1]+"</h4><p>"+monthFocusFor(i)+"</p><button class='action' data-act='month' data-id='"+i+"'>VIEW VECTOR</button></div>").join("")+"</div><div class='section-title'><h3>Goal constellation</h3><span>"+GOALS.length+" GOALS</span></div><div class='grid g3'>"+GOALS.map(goal).join("")+"</div>"}
+function monthFocusFor(i){return["Style reset, Wedding research and identity foundations.","Birthday, Wedding Planning and brand identity.","Marketing application and Graphic Design.","Cybersecurity and driving foundations.","Website building and web security.","Mid-year consolidation.","AI Engineering H2 launch.","AI Engineering + Vibe B systems.","Growth, analytics and portfolio.","Driving and technical execution.","Finance, admin and stability.","2027 closeout and 2028 launch."][i]}
+function marketing(){return"<div class='card hero'><span class='eyebrow'>MARKETING ENGINE / ACTIVE 01 OCT 2026</span><h1>145 topics.<br><em>Built to be applied.</em></h1><p>Fundamentals → strategy → branding → consumer behavior → content → social → digital → advertising → analytics → CRM → growth → management.</p><div class='big-number cyan'>"+mp()+"%</div><div class='progress'><i style='width:"+mp()+"%'></i></div></div><div class='section-title'><h3>Curriculum</h3><span>"+TOPICS.filter(t=>S.done[t.id]).length+" / "+TOPICS.length+"</span></div><div class='grid g2'>"+CURRICULUM.map((s,i)=>{let ts=TOPICS.filter(t=>t.section===s[0]),d=ts.filter(t=>S.done[t.id]).length;return"<div class='card'><span class='tag'>"+String(i+1).padStart(2,"0")+"</span><h3>"+esc(s[0])+"</h3><div class='progress'><i style='width:"+pct(d/ts.length*100)+"%'></i></div><div class='ptext'><span>"+d+" / "+ts.length+"</span><b>"+pct(d/ts.length*100)+"%</b></div><div class='topic-list'>"+ts.map(t=>"<div class='topic'><span>"+esc(t.name)+"</span><button class='action' data-act='mkt' data-id='"+t.id+"'>"+(S.done[t.id]?"DONE":"DO")+"</button></div>").join("")+"</div></div>"}).join("")+"</div>"}
+function italian(){let p=phase();return"<div class='card hero'><span class='eyebrow'>ITALIAN / 365-DAY ARC</span><h1>Build a <em>real language.</em></h1><p>Daily skill rotation + weekly review + AI conversation. Foundation → A1 → A2 → B1 foundation.</p><div class='grid g3'>"+stat("DAY",date()>=LS?day():"PREVIEW","of 365","cyan")+stat("PHASE",p[0],p[3],"violet")+stat("SKILL",date()>=LS?skill():"READY","daily block","lime")+"</div></div><div class='section-title'><h3>Phase map</h3><span>365 DAYS</span></div><div class='grid g2'>"+PHASES.map(x=>"<div class='phase "+(x[0]===p[0]?"current":"")+"'><b>"+x[0]+" · DAYS "+x[1]+"–"+x[2]+"</b><span>"+esc(x[3])+"</span></div>").join("")+"</div><div class='section-title'><h3>Skill wheel</h3><span>7-DAY LOOP</span></div><div class='grid g4'>"+["Vocabulary","Grammar","Listening","Speaking","Reading","Writing","AI Conversation"].map((x,i)=>stat("DAY "+(i+1),x,"Practice + evidence","cyan")).join("")+"</div>"}
+function vibe(){return"<div class='card hero'><span class='eyebrow'>THE VIBE B / DARK LUXURY WEDDING PLANNER</span><h1>The <em>key</em> opens the brand.</h1><p>Use the key as the core metaphor: access, trust, entrance, transformation and a new chapter. The brand grows from symbol → identity → offer → presence → authority → experience.</p></div><div class='grid g3'>"+VIBE.map((v,i)=>"<div class='card goal'><span class='tag'>0"+(i+1)+"</span><h4>"+v[0]+"</h4><p>"+v[1]+"</p><div class='progress'><i style='width:"+((i+1)*16.6)+"%'></i></div></div>").join("")+"</div><div class='section-title'><h3>Direct application</h3><span>LEARN → BUILD</span></div><div class='grid g2'><div class='card'><span class='eyebrow'>MARKETING</span><h3>Every lesson becomes a Vibe B asset.</h3><p class='muted'>Positioning → offer. Branding → identity. Content → Instagram. Analytics → measurement. Growth → acquisition.</p></div><div class='card'><span class='eyebrow'>DESIGN</span><h3>Premium, not beginner-looking.</h3><p class='muted'>Dark space, controlled typography, key symbolism, premium imagery and a system that scales beyond Instagram.</p></div></div>"}
+function finance(){return"<div class='card hero'><span class='eyebrow'>FINANCE CONTROL</span><h1>Give every pound a <em>job.</em></h1><p>Separate capital, side savings, emergency reserve, vehicle fund, debt reduction and rewards. The OS tracks the target; you control the actual money.</p></div><div class='grid g4'>"+GOALS.filter(g=>g[1]==="FINANCE").slice(0,4).map(g=>stat(g[2],gv(g[0]).toLocaleString()+" "+g[4],gp(g)+"% of target","gold")).join("")+"</div><div class='section-title'><h3>Financial buckets</h3><span>UPDATE</span></div><div class='grid g2'>"+GOALS.filter(g=>g[1]==="FINANCE").map(goal).join("")+"</div>"}
+function progress(){let avg=pct(GOALS.reduce((n,g)=>n+gp(g),0)/GOALS.length);return"<div class='grid g4'>"+stat("MARKETING",mp()+"%","145 topics","cyan")+stat("LIFE",avg+"%","all goals","violet")+stat("MISSIONS",Object.keys(S.done).length,"completed actions","lime")+stat("REWARDS",S.rewards.length,"earned moments","gold")+"</div><div class='section-title'><h3>Category telemetry</h3><span>LIVE</span></div><div class='grid g3'>"+["FINANCE","EDUCATION","TECH","LANGUAGES","DRIVING","STYLE","THE VIBE B","ADMIN","SYSTEM","PERSONAL"].map(c=>stat(c,cat(c)+"%","goal constellation","cyan")).join("")+"</div>"}
+function settings(){return"<div class='card hero'><span class='eyebrow'>SYSTEM SETTINGS</span><h1>Shape the <em>machine.</em></h1><p>Everything is stored locally in this browser. Marketing pacing can be changed without changing the curriculum.</p></div><div class='grid g2'><div class='card'><span class='eyebrow'>MARKETING PACE</span><h3>Topics per day</h3><input id='daily' type='number' min='1' max='10' value='"+S.daily+"'><button class='action' data-act='save'>SAVE</button><p class='muted'>Default: 2/day.</p></div><div class='card'><span class='eyebrow'>DATA</span><h3>Your progress is yours.</h3><button class='action' data-act='export'>EXPORT JSON</button><button class='action' data-act='reset'>RESET</button><p class='muted'>Export before resetting.</p></div></div>"}
+const P={dashboard:dashboard,missions:missionsPage,life:life,marketing:marketing,italian:italian,vibe:vibe,finance:finance,progress:progress,settings:settings};
+const N={dashboard:"Nexus Command",missions:"Today's Missions",life:"2027 Life Map",marketing:"Marketing Engine",italian:"Italian Arc",vibe:"The Vibe B",finance:"Finance Control",progress:"Progress",settings:"Settings"};
+function render(v){view=v||view;document.getElementById("view").innerHTML=P[view]();document.getElementById("pageTitle").textContent=N[view];document.getElementById("eyebrow").textContent="JESSIE / "+view.toUpperCase();document.getElementById("dateChip").textContent=date().slice(0,7);document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===view));document.getElementById("evo").textContent=mp()<10?"DORMANT":mp()<25?"PRESENCE":mp()<50?"FORMING":mp()<75?"BODY ONLINE":"AWAKENED";document.getElementById("evoBar").style.width=mp()+"%";document.getElementById("evoPct").textContent=mp()+"%"}
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>render(b.dataset.view));
+document.getElementById("view").onclick=function(e){let b=e.target.closest("[data-act]");if(!b)return;let a=b.dataset.act,id=b.dataset.id;
+if(a==="nav"){render(id)}
+else if(a==="done"){finish(id,b.dataset.title)}
+else if(a==="mkt"){let t=TOPICS.find(x=>x.id===id);if(t)finish("m-"+id,t.name)}
+else if(a==="goal"){let g=GOALS.find(x=>x[0]===id),v=prompt("Current progress for "+g[2]+" ("+g[4]+")",String(gv(id)));if(v!==null){S.life[id]=Math.max(0,Number(v)||0);save();render(view);toast("PROGRESS SYNCED")}}
+else if(a==="month"){let m=MONTHS[Number(id)];modal("<span class='eyebrow'>2027 / "+m[0]+"</span><h3>"+m[1]+"</h3><p>Focus goals:</p><div class='timeline'>"+m[2].map(x=>{let g=GOALS.find(z=>z[0]===x);return"<div class='timeline-item'><b>"+(g?g[2]:x)+"</b><small>"+monthFocusFor(Number(id))+"</small></div>"}).join("")+"</div><button class='action' data-act='close'>CLOSE</button>")}
+else if(a==="close"){close()}
+else if(a==="save"){S.daily=Math.max(1,Math.min(10,Number(document.getElementById("daily").value)||2));save();toast("PACE SAVED");render(view)}
+else if(a==="export"){let blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="jessie-nexus-backup.json";a.click();URL.revokeObjectURL(u)}
+else if(a==="reset"){if(confirm("Reset local JESSIE NEXUS progress?")){S=seed();save();render("dashboard");toast("SYSTEM RESET")}}};
+document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")close()};
+function startAudio(){let f=document.getElementById("yt");f.src="https://www.youtube.com/embed/"+MUSIC+"?autoplay=1&loop=1&playlist="+MUSIC+"&controls=0&playsinline=1"}
+window.launchNexus=function(){document.getElementById("boot").classList.add("hidden");document.getElementById("app").classList.remove("hidden");document.getElementById("audioDock").classList.remove("hidden");startAudio();render("dashboard");toast("NEXUS ONLINE")};
+window.toggleAudio=function(){let f=document.getElementById("yt");if(f.src){f.src="";document.getElementById("audioBtn").textContent="♫";toast("AUDIO OFF")}else{startAudio();document.getElementById("audioBtn").textContent="Ⅱ";toast("AUDIO ON")}};
+window.closeModal=close;window.navigate=render;
+document.getElementById("audioDock").querySelector("button").onclick=window.toggleAudio;
+document.getElementById("audioBtn").onclick=window.toggleAudio;
+document.getElementById("clock").textContent=new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+setInterval(()=>{let c=document.getElementById("clock");if(c)c.textContent=new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})},1000);
+render("dashboard");
+})();
