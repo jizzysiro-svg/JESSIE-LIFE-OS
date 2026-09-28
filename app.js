@@ -73,7 +73,7 @@ function ensureDaily(){
  ensureLifeDaily();
  save();
 }
-function todayTasks(){ensureDaily();return state.tasks.filter(t=>t.scheduledDate===today()&&!completed(t)).sort((a,b)=>a.order-b.order).slice(0,99)}
+function todayTasks(){return state.tasks.filter(t=>t.scheduledDate===today()&&!completed(t)).sort((a,b)=>a.order-b.order).slice(0,99)}
 function todayDone(){return state.tasks.filter(t=>t.completionDate===today()&&completed(t))}
 function currentStreak(){
  let s=0,d=dObj(today());const qualifying=new Set(state.sessions.filter(x=>x.duration>=1).map(x=>x.date));
