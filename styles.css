@@ -186,3 +186,18 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
 .holo-panel{border-color:rgba(255,240,0,.30)!important;background:linear-gradient(145deg,rgba(67,62,15,.30),rgba(8,8,3,.70))!important}.holo-panel small{color:#a9a35d!important}.holo-panel b{color:#fff5a8!important}.holo-panel span{color:#aaa568!important}
 .holo-bottom{border-top-color:rgba(255,240,0,.22)!important}.holo-bottom small{color:#9a9556!important}.holo-bottom b{color:#fff5a8!important}.holo-bottom .primary{border-color:#fff000!important;background:linear-gradient(180deg,#4d4700,#171500)!important;color:#fff000!important;box-shadow:0 0 28px rgba(255,240,0,.16)!important}
 .holo-milestone{border-color:rgba(255,240,0,.42)!important;background:rgba(60,54,8,.34)!important;box-shadow:0 0 25px rgba(255,240,0,.12)!important}.holo-milestone>span,.holo-milestone b{color:#fff000!important}.holo-milestone small{color:#b8ad5c!important}
+
+
+/* ABSOLUTE JESSIE NEON-YELLOW COLOR LOCK */
+.jlayer,
+.dashboard-jessie-float img,
+.holo-jessie .jlayer{
+ filter:brightness(0) saturate(100%) invert(91%) sepia(100%) saturate(2600%) hue-rotate(3deg) brightness(108%) contrast(108%)!important;
+ opacity:1!important;
+ mix-blend-mode:screen!important;
+}
+.jessie .silhouette{background:#fff000!important;opacity:.16!important;filter:blur(3px)!important}
+.dashboard-jessie-float img{filter:brightness(0) saturate(100%) invert(91%) sepia(100%) saturate(2600%) hue-rotate(3deg) brightness(108%) contrast(108%) drop-shadow(0 0 22px #fff000)!important}
+.jessie-float-aura{background:radial-gradient(ellipse,rgba(255,240,0,.38),rgba(255,240,0,.10) 42%,transparent 72%)!important}
+.jessie-float-ring{border-color:rgba(255,240,0,.72)!important;box-shadow:0 0 25px rgba(255,240,0,.35),inset 0 0 20px rgba(255,240,0,.12)!important}
+.jessie-float-scan{background:linear-gradient(90deg,transparent,#fff000,transparent)!important;box-shadow:0 0 22px #fff000!important}
