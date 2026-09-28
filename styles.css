@@ -201,3 +201,15 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
 .jessie-float-aura{background:radial-gradient(ellipse,rgba(255,240,0,.38),rgba(255,240,0,.10) 42%,transparent 72%)!important}
 .jessie-float-ring{border-color:rgba(255,240,0,.72)!important;box-shadow:0 0 25px rgba(255,240,0,.35),inset 0 0 20px rgba(255,240,0,.12)!important}
 .jessie-float-scan{background:linear-gradient(90deg,transparent,#fff000,transparent)!important;box-shadow:0 0 22px #fff000!important}
+
+
+/* JESSIE DETAIL PRESERVATION FIX */
+.jlayer,.dashboard-jessie-float img,.holo-jessie .jlayer{
+ filter:grayscale(1) sepia(1) saturate(8) hue-rotate(2deg) contrast(1.12) brightness(1.06)!important;
+ opacity:1!important;
+ mix-blend-mode:normal!important;
+}
+.dashboard-jessie-float img{
+ filter:grayscale(1) sepia(1) saturate(8) hue-rotate(2deg) contrast(1.12) brightness(1.10) drop-shadow(0 0 20px rgba(255,240,0,.5))!important;
+}
+.jlayer{box-shadow:0 0 65px rgba(255,240,0,.28)!important}
