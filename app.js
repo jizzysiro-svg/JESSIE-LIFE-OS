@@ -135,7 +135,7 @@ const ITALIAN_PHASES=[["Foundation",1,30,"pronunciation, alphabet, greetings, nu
 const ITALIAN_SKILLS=["Vocabulary","Grammar","Listening","Speaking","Reading","Writing","AI Conversation"];
 function ensureLifeState(){if(!state.lifeTasks)state.lifeTasks=[];if(!state.lifeProgress)state.lifeProgress={}}
 function lifeDay(){return Math.max(1,Math.floor((dObj(today())-dObj(LIFE_START))/86400000)+1)}
-function lifeMonthPlan(d){return LIFE_MONTHS[Math.min(11,Math.max(0,dObj(LIFE_START).getMonth()+Math.floor((d-1)/30))) ]||LIFE_MONTHS[0]}
+function lifeMonthPlan(d){const dt=dObj(LIFE_START);dt.setDate(dt.getDate()+Math.max(0,d-1));return LIFE_MONTHS[dt.getMonth()]||LIFE_MONTHS[0]}
 function lifeCalendarPlan(dateStr=today()){const dt=dObj(dateStr),month=dt.getMonth()+1,week=Math.floor((dt.getDate()-1)/7)+1;return LIFE_MONTHS[month-1]||LIFE_MONTHS[0]}
 function lifeWeekNumber(d){return Math.floor((d-1)/7)+1}
 function lifeWeekFocus(d){const p=lifeMonthPlan(d);return p.actions[(lifeWeekNumber(d)-1)%p.actions.length]}
