@@ -268,3 +268,39 @@ button.secondary:hover,.icon:hover{border-color:#fff000!important;background:rgb
 @keyframes jessieOrbitB{to{transform:rotateY(67deg) rotateZ(375deg)}}
 @keyframes jessieOrbitC{to{transform:rotateX(72deg) rotateZ(-360deg)}}
 @keyframes jessieOrbitD{to{transform:rotateY(72deg) rotateZ(338deg)}}
+
+/* FINAL JESSIE WEB HOLOGRAM — MONOCHROME PHOTO + YELLOW SCAN SYSTEM */
+.dashboard-jessie-float{overflow:visible!important;isolation:isolate!important}
+.dashboard-jessie-float img{
+ z-index:3!important;mix-blend-mode:normal!important;opacity:1!important;
+ filter:grayscale(1) contrast(1.16) brightness(.92)!important;
+}
+.dashboard-jessie-float .jessie-float-aura{z-index:0!important;background:radial-gradient(ellipse,rgba(255,240,0,.18),rgba(255,240,0,.05) 45%,transparent 74%)!important}
+.dashboard-jessie-float .jessie-float-grid{
+ position:absolute;z-index:1;width:205px;height:285px;opacity:.32;pointer-events:none;
+ background:linear-gradient(rgba(255,240,0,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(255,240,0,.12) 1px,transparent 1px);
+ background-size:18px 18px;mask-image:radial-gradient(ellipse,#000 35%,transparent 74%);-webkit-mask-image:radial-gradient(ellipse,#000 35%,transparent 74%);
+}
+.dashboard-jessie-float .jessie-float-ring{z-index:5!important;display:block!important;opacity:1!important;border-color:#fff000!important}
+.dashboard-jessie-float .ring-one{width:215px!important;height:92px!important;border:1.5px solid #fff000!important;border-radius:50%!important;box-shadow:0 0 7px #fff000,0 0 22px rgba(255,240,0,.65)!important;transform:rotateX(68deg)!important;animation:jOrbit1 6s linear infinite!important}
+.dashboard-jessie-float .ring-two{width:165px!important;height:260px!important;border:1px dashed rgba(255,240,0,.92)!important;border-radius:50%!important;box-shadow:0 0 7px #fff000,0 0 18px rgba(255,240,0,.5)!important;transform:rotateY(67deg) rotateZ(15deg)!important;animation:jOrbit2 5s linear infinite reverse!important}
+.dashboard-jessie-float .ring-three{width:235px!important;height:150px!important;border:1px solid rgba(255,240,0,.68)!important;border-radius:50%!important;box-shadow:0 0 5px #fff000,0 0 15px rgba(255,240,0,.42)!important;transform:rotateX(72deg) rotateZ(25deg)!important;animation:jOrbit3 8s linear infinite!important}
+.dashboard-jessie-float .jessie-orbit{position:absolute;z-index:6;width:225px;height:1px;background:linear-gradient(90deg,transparent,#fff000 25%,#ffff9a 50%,#fff000 75%,transparent);box-shadow:0 0 8px #fff000,0 0 18px rgba(255,240,0,.55);pointer-events:none}
+.dashboard-jessie-float .orbit-a{transform:rotate(18deg);animation:jScanOrbitA 4.5s ease-in-out infinite}
+.dashboard-jessie-float .orbit-b{transform:rotate(-22deg);animation:jScanOrbitB 5.5s ease-in-out infinite reverse}
+.dashboard-jessie-float .jessie-float-scan{z-index:7!important;background:linear-gradient(90deg,transparent,#fff000 42%,#ffffb0 50%,#fff000 58%,transparent)!important;box-shadow:0 0 10px #fff000,0 0 24px rgba(255,240,0,.8)!important;opacity:.95!important}
+.dashboard-jessie-float .jessie-planet{
+ position:absolute;z-index:8;width:9px;height:9px;border-radius:50%;background:#fff000;
+ box-shadow:0 0 5px #fff000,0 0 14px rgba(255,240,0,.9),inset 0 0 3px #fffbd0;pointer-events:none;
+}
+.dashboard-jessie-float .planet-a{animation:jPlanetA 5s linear infinite}
+.dashboard-jessie-float .planet-b{animation:jPlanetB 7s linear infinite reverse}
+.dashboard-jessie-float .planet-c{width:6px;height:6px;animation:jPlanetC 4s linear infinite}
+@keyframes jOrbit1{to{transform:rotateX(68deg) rotateZ(360deg)}}
+@keyframes jOrbit2{to{transform:rotateY(67deg) rotateZ(375deg)}}
+@keyframes jOrbit3{to{transform:rotateX(72deg) rotateZ(385deg)}}
+@keyframes jScanOrbitA{0%,100%{top:95px;opacity:.15}50%{top:205px;opacity:.8}}
+@keyframes jScanOrbitB{0%,100%{top:215px;opacity:.15}50%{top:105px;opacity:.7}}
+@keyframes jPlanetA{from{transform:rotate(0deg) translateX(108px) rotate(0deg)}to{transform:rotate(360deg) translateX(108px) rotate(-360deg)}}
+@keyframes jPlanetB{from{transform:rotate(180deg) translateX(92px) rotate(-180deg)}to{transform:rotate(-180deg) translateX(92px) rotate(180deg)}}
+@keyframes jPlanetC{from{transform:rotate(35deg) translateX(118px) rotate(-35deg)}to{transform:rotate(395deg) translateX(118px) rotate(-395deg)}}
