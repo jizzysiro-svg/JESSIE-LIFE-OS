@@ -169,7 +169,7 @@ dashboard(){ensureDaily();const tasks=todayTasks(),done=todayDone(),next=adaptiv
   <div class="fd-bottom">
     <div class="fd-card fd-panel"><div class="fd-panel-head"><b>✓ TODAY'S TASKS</b><span>${done.length}/${done.length+tasks.length} COMPLETE</span></div><div class="fd-task-list">${[...done,...tasks].slice(0,6).map(t=>`<div class="fd-task-row"><span class="fd-check">${completed(t)?"✓":""}</span><div><b>${esc(t.name)}</b><small>${esc(t.section||"Marketing")}</small></div><em>${esc(t.difficulty||"")}</em><i>›</i></div>`).join("")||'<div class="fd-empty">No tasks scheduled.</div>'}</div></div>
     <div class="fd-card fd-panel fd-month"><div class="fd-panel-head"><b>▣ THIS MONTH</b><span>${review.completedCount} ACTIONS</span></div><div class="fd-month-stats"><strong>${review.completedCount}</strong><span>Tasks Completed</span><strong>${Math.round(review.minutes/60*10)/10}</strong><span>Study Hours</span><strong>${currentStreak()}</strong><span>Day Streak</span></div></div>
-    <div class="fd-card fd-panel fd-reward"><div class="fd-panel-head"><b>✦ REWARD SYSTEM</b><span>READY</span></div><h3>Mission Complete?</h3><p>Complete today's mission to unlock your intentional reward.</p><ul><li>Guilt-free break</li><li>Favorite drink</li><li>Self-care</li><li>Save reward budget</li></ul></div>
+    <div class="fd-card fd-panel fd-reward"><div class="fd-panel-head"><b>✦ REWARD SYSTEM</b><span>READY</span></div><div class="fd-gift-wrap"><div class="fd-gift"><i></i><b></b><span></span></div><div><h3>Mission Complete?</h3><p>Complete today's mission to unlock your intentional reward.</p><ul><li>Guilt-free break</li><li>Favorite drink</li><li>Self-care</li><li>Save reward budget</li></ul></div></div></div>
     <div class="fd-card fd-panel fd-review"><div class="fd-panel-head"><b>▣ MONTHLY REVIEW</b><span>VIEW REPORT →</span></div><small>WHAT NEEDS ATTENTION</small><p>${review.stalled.length?review.stalled.slice(0,3).map(g=>esc(g.title)).join(" · "):"No zero-progress goal signals detected."}</p><button class="secondary" onclick="openMonthlyReview()">OPEN REVIEW →</button></div>
   </div>
 </div>`},study(){ensureDaily();const task=todayTasks()[0]||nextTask();if(!task)return `<div class="card hero"><div class="eyebrow">STUDY MODE</div><h2>Curriculum complete.</h2><p>There is no unfinished curriculum task remaining.</p></div>`;const topic=topicById(task.topicId), mats=materialFor(task.id);return `<div class="study-layout"><div class="card study-focus ${timer.running?"complete-flash":""}"><div class="eyebrow">CURRENT TASK · ${esc(topic.section)}</div><h2>${esc(topic.name)}</h2><p class="objective">${esc(topic.objective)}</p><div class="mini-card" style="margin-top:17px"><small>OBJECTIVE</small><b>${esc(topic.objective)}</b><span>${task.estimated} min · ${esc(task.difficulty)} · ${task.status}</span></div><div class="timer" id="timer">${timer.taskId===task.id?fmt(timer.seconds):"00:00"}</div><div class="buttons"><button class="primary" onclick="${timer.running?"pauseSession()":`startSession('${task.id}')`}">${timer.running?"PAUSE FOCUS":"START STUDY"}</button><button class="secondary" onclick="completeTask('${task.id}')">COMPLETE</button><button class="secondary" onclick="skipTask('${task.id}')">SKIP</button></div><textarea class="notes" placeholder="Notes for this topic…" onchange="saveNote('${topic.id}',this.value)">${esc(state.notes[topic.id]||"")}</textarea></div>
@@ -278,10 +278,20 @@ function showHologramCelebration(t,beforePct,afterPct,newly,stageNow,next){
  setTimeout(()=>{const w=document.querySelector('.holo-wrap');if(w)w.classList.add('ignite')},30);
 }
 
+
+function startSystemMusic(){
+ const id="jessie-system-music";
+ let f=document.getElementById(id);
+ if(!f){f=document.createElement("iframe");f.id=id;f.title="JESSIE System Music";f.allow="autoplay; encrypted-media";f.setAttribute("aria-hidden","true");f.style.cssText="position:fixed;width:1px;height:1px;left:-20px;bottom:-20px;border:0;opacity:0;pointer-events:none";document.body.appendChild(f)}
+ f.src="https://www.youtube.com/embed/tcHZFgMIyIk?autoplay=1&loop=1&playlist=tcHZFgMIyIk&playsinline=1&rel=0";
+}
+function retrySystemMusic(){startSystemMusic();}
+window.addEventListener("pointerdown",()=>{if(!document.getElementById("jessie-system-music"))startSystemMusic()},{once:true});
+
 function speak(text){if(!state.settings.voice||!("speechSynthesis"in window))return;const u=new SpeechSynthesisUtterance(text);u.volume=state.settings.voiceVolume;u.rate=.92;u.pitch=.88;speechSynthesis.cancel();speechSynthesis.speak(u)}
 function tone(kind){if(!state.settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audio.ctx)audio.ctx=new C();const c=audio.ctx,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=kind==="complete"?720:kind==="start"?220:420;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime((state.settings.soundVolume||.2)*.25,c.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.32);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch{}}
 function startAmbient(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(audio.ctx)audio.ctx.resume();else audio.ctx=new C();const c=audio.ctx,g=c.createGain(),o=c.createOscillator();g.gain.value=(state.settings.soundVolume||.2)*.08;o.type="sine";o.frequency.value=55;o.connect(g).connect(c.destination);o.start();audio.ambient=o;audio.master=g}catch{}}
 function stopAmbient(){try{audio.ambient?.stop()}catch{}audio.ambient=null}
 function parseRoute(){const h=location.hash.slice(1)||"dashboard";if(h.startsWith("topic/")){openTopic(h.slice(6));return}navigate(V[h]?h:"dashboard")}
 window.addEventListener("hashchange",parseRoute);window.addEventListener("beforeunload",()=>{if(timer.running)finishSession(true)});window.addEventListener("keydown",e=>{if(e.key==="Escape")closeOverlay()});
-ensureDaily();parseRoute();if(state.settings.sound)startAmbient();showBootSequence();
+ensureDaily();parseRoute();if(state.settings.sound)startAmbient();startSystemMusic();showBootSequence();
