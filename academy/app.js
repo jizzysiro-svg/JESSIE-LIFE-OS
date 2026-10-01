@@ -27,7 +27,18 @@
 
   function uid(prefix='id'){ return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); }
   function load(){
-    try{const raw=localStorage.getItem(KEY); if(raw){const x=JSON.parse(raw); return {...seed,...x,prefs:{...seed.prefs,...(x.prefs||{})}};}}catch(e){}
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(raw){
+        const x=JSON.parse(raw)||{};
+        const base=structuredClone(seed);
+        const arrays=['goals','courses','modules','lessons','topics','notes','tasks','exams','attempts','answers','reviews','sessions','events'];
+        arrays.forEach(k=>{if(Array.isArray(x[k])) base[k]=x[k];});
+        base.prefs={...seed.prefs,...(x.prefs||{})};
+        if(Number.isFinite(x.seq)) base.seq=x.seq;
+        return base;
+      }
+    }catch(e){}
     return structuredClone(seed);
   }
   function save(){ localStorage.setItem(KEY,JSON.stringify(db)); }
@@ -260,8 +271,14 @@
     if(e.target.id==='confidence-filter'){renderVault()}
   });
   document.addEventListener('input',e=>{if(e.target.id==='vault-search')renderVault()});
+  function showBootError(err){
+    const v=document.getElementById('view');
+    if(v) v.innerHTML='<div style="min-height:70vh;display:grid;place-items:center;padding:30px"><div style="max-width:680px;border:1px solid rgba(229,255,0,.25);border-radius:24px;padding:28px;background:rgba(10,12,14,.96);box-shadow:0 25px 80px rgba(0,0,0,.55)"><div style="color:#e5ff00;font-size:10px;letter-spacing:.2em">JESSIE // NEON ACADEMY</div><h1 style="font-size:30px;margin:10px 0">BOOT RECOVERY</h1><p style="color:#8e949d;line-height:1.7">The Academy interface hit a startup error. Your saved Academy data was not deleted.</p><p style="color:#666d75;font:11px ui-monospace,monospace;white-space:pre-wrap">'+esc(err?.message||err||'Unknown startup error')+'</p><button onclick="location.reload()" style="border:1px solid #e5ff00;background:rgba(229,255,0,.08);color:#e5ff00;border-radius:10px;padding:11px 15px;cursor:pointer">RETRY ACADEMY</button></div></div>';
+  }
+  window.addEventListener('error',e=>showBootError(e.error||e.message),{once:true});
+  window.addEventListener('unhandledrejection',e=>showBootError(e.reason),{once:true});
   document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
   document.getElementById('quick-form')?.addEventListener('submit',()=>{});
   function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
-  window.addEventListener('DOMContentLoaded',()=>{document.body.classList.toggle('reduced-motion',db.prefs.reducedMotion);render()});
+  window.addEventListener('DOMContentLoaded',()=>{try{document.body.classList.toggle('reduced-motion',!!db.prefs.reducedMotion);render()}catch(err){showBootError(err)}});
 })();
