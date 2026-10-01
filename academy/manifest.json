@@ -1,0 +1,10 @@
+{
+  "name":"JESSIE NEON ACADEMY",
+  "short_name":"NEON ACADEMY",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#050505",
+  "theme_color":"#050505",
+  "description":"Personal learning calendar, knowledge vault and examination lab.",
+  "icons":[]
+}
