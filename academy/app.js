@@ -66,14 +66,30 @@
     const studied=tasks.filter(x=>x.status==='completed'||x.status==='studied').length;
     const hours=Math.round(db.sessions.reduce((a,x)=>a+(Number(x.minutes)||0),0)/60*10)/10;
     const weak=db.reviews.filter(r=>r.status==='pending'&&r.date<=d).length;
+    const next=tasks.find(x=>x.status!=='completed'&&x.status!=='studied')||tasks[0];
     shell().innerHTML=
-      '<div class="hero"><div><span class="eyebrow">PERSONAL LEARNING SYSTEM</span><h1>Good morning, Jessie.</h1><p>Learn → Understand → Record → Test → Review → Master.</p></div><div class="hero-art"><img src="jessie-academy.svg" alt="Jessie Academy artwork"><span>NEON<br>GUIDE</span></div></div>'+
-      '<div class="stats">'+stat('Today’s learning',tasks.length,studied+' completed','◫')+stat('Study time',hours+'h','recorded sessions','◴')+stat('Knowledge notes',notes,'saved permanently','◇')+stat('Assessments',exams,weak+' reviews due','⚡')+'</div>'+
-      '<div class="grid-2">'+
-      panel('Today’s Learning', tasks.length?'<div class="agenda">'+tasks.map(taskRow).join('')+'</div>':'<div class="empty">No tasks today. Add one from the calendar.</div>','<button class="ghost" data-action="add-task">+ Add task</button>')+
-      panel('Knowledge Status', masteryOverview())+
+      '<div class="command-center">'+
+        '<div class="scanline"></div><div class="hud-corner tl"></div><div class="hud-corner tr"></div><div class="hud-corner bl"></div><div class="hud-corner br"></div>'+
+        '<div class="hero-copy"><span class="eyebrow">JESSIE // NEON GUIDE ONLINE</span><h1>YOUR LEARNING<br><em>COMMAND CENTER.</em></h1><p>Learn → Understand → Record → Test → Review → Master.</p><div class="live-status"><i></i>SYSTEM READY <span>•</span> DAY '+Math.max(1,Math.floor((new Date(d)-new Date('2026-10-01'))/86400000)+1)+'</div></div>'+
+        '<div class="holo-stage"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="orbit orbit-c"></div><div class="scan-ring"></div><div class="holo-grid"></div><div class="holo-particle p1"></div><div class="holo-particle p2"></div><div class="holo-particle p3"></div><div class="jessie-holo"><img src="jessie-academy.svg" alt="Jessie Neon Guide"></div><div class="holo-label">NEON<br><b>GUIDE</b></div></div>'+
       '</div>'+
-      '<div class="grid-2">'+panel('Learning Arc',arc())+panel('Quick Capture',quickCapture())+'</div>';
+      '<div class="mission-bar"><div><span class="eyebrow">TODAY'S MISSION</span><strong>'+esc(next?.title||'No mission loaded yet')+'</strong><small>'+(next?(next.duration||0)+' MIN • '+(next.time||'ANY TIME'):'Create your first study mission')+'</small></div><button class="primary mission-btn" data-action="'+(next?'open-task':'add-task')+'" '+(next?'data-id="'+next.id+'"':'')+'>'+(next?'ENTER MISSION →':'CREATE MISSION →')+'</button></div>'+
+      '<div class="neon-command-grid">'+
+        '<button class="neon-command active-command" data-view="calendar"><span>◫</span><b>PLAN</b><small>Calendar</small></button>'+
+        '<button class="neon-command" data-view="vault"><span>◇</span><b>CAPTURE</b><small>Knowledge Vault</small></button>'+
+        '<button class="neon-command" data-view="exam"><span>⚡</span><b>TEST</b><small>Exam Lab</small></button>'+
+        '<button class="neon-command" data-view="review"><span>↻</span><b>RECALL</b><small>Review Center</small></button>'+
+      '</div>'+
+      '<div class="neon-stats">'+
+        stat('Today',tasks.length,studied+' completed','◉')+
+        stat('Study time',hours+'h','recorded','◴')+
+        stat('Knowledge',notes,'notes saved','◇')+
+        stat('Reviews',weak,exams+' assessments','↻')+
+      '</div>'+
+      '<div class="grid-2 neon-lower">'+
+        panel('Today’s Learning', tasks.length?'<div class="agenda">'+tasks.map(taskRow).join('')+'</div>':'<div class="empty">Your command center is clear. Create your first mission.</div>','<button class="ghost" data-action="add-task">+ Mission</button>')+
+        panel('Mastery Signal', masteryOverview())+
+      '</div>';
   }
 
   function taskRow(t){
