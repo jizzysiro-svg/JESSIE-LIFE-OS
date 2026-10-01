@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<meta name="description" content="JESSIE NEON ACADEMY — personal learning calendar, knowledge vault and exam lab.">
+<title>JESSIE NEON ACADEMY</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-orb">J</div>
+      <div><strong>JESSIE</strong><span>NEON ACADEMY</span></div>
+    </div>
+    <button class="mobile-close" id="mobileClose">×</button>
+    <nav id="nav">
+      <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
+      <button class="nav-item" data-view="calendar"><span>◫</span>Neon Calendar</button>
+      <button class="nav-item" data-view="goals"><span>◎</span>My Goals</button>
+      <button class="nav-item" data-view="courses"><span>◈</span>My Courses</button>
+      <button class="nav-item" data-view="vault"><span>▣</span>Knowledge Vault</button>
+      <button class="nav-item" data-view="exam"><span>⌁</span>AI Exam Lab</button>
+      <button class="nav-item" data-view="review"><span>↻</span>Review Center</button>
+      <button class="nav-item" data-view="analytics"><span>◒</span>Progress & Analytics</button>
+      <button class="nav-item" data-view="library"><span>⌘</span>Study Library</button>
+      <button class="nav-item" data-view="settings"><span>⚙</span>Settings & Data</button>
+    </nav>
+    <div class="side-status"><i></i><span>LOCAL CORE ONLINE</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <div class="crumb"><span>JESSIE</span><b>/</b><strong id="viewTitle">DASHBOARD</strong></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="quickAdd" title="Quick capture">＋</button>
+        <button class="icon-btn" id="todayBtn" title="Today">◷</button>
+      </div>
+    </header>
+    <div id="view" class="view"></div>
+  </main>
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
