@@ -218,3 +218,40 @@ body:after{
   *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
 }
 body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{animation:none!important}
+
+/* =========================================================
+   KNOWLEDGE NOTE — simple capture-first workspace
+   ========================================================= */
+#modal .modal-card:has(.note-compose){width:min(920px,calc(100vw - 28px));max-height:min(88vh,900px);overflow:auto}
+.note-compose{padding:2px 2px 4px}
+.note-compose-intro{margin:0 0 22px;padding:4px 2px 0}
+.note-compose-intro h3{margin:7px 0 7px;font-size:25px;letter-spacing:-.03em;color:#f1f1eb}
+.note-compose-intro p{margin:0;color:#777d84;font-size:11px;line-height:1.6;max-width:650px}
+.note-compose>label:first-of-type{display:block;margin-bottom:18px}
+.note-compose label{display:block;color:#8a9097;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+.note-compose input,.note-compose textarea,.note-compose select{margin-top:7px}
+.note-compose input[name="title"]{height:48px;font-size:14px;background:rgba(229,255,0,.025);border-color:rgba(229,255,0,.16)}
+.note-core-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.note-core-grid label{padding:15px;border:1px solid rgba(255,255,255,.065);border-radius:15px;background:rgba(8,10,12,.72)}
+.note-core-grid label span{display:block;color:#e5ff00;font-size:9px;letter-spacing:.14em;font-weight:800}
+.note-core-grid textarea{min-height:125px;border:0;background:transparent;padding:5px 0 0;color:#f1f1eb;resize:vertical;outline:none}
+.note-core-grid textarea:focus{box-shadow:none}
+.note-core-grid label:focus-within{border-color:rgba(229,255,0,.28);box-shadow:0 0 24px rgba(229,255,0,.035)}
+.note-advanced{margin-top:14px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(8,10,12,.5)}
+.note-advanced summary{cursor:pointer;list-style:none;padding:13px 15px;color:#777d84;font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+.note-advanced summary::-webkit-details-marker{display:none}
+.note-advanced summary:after{content:'＋';float:right;color:#e5ff00}
+.note-advanced[open] summary:after{content:'−'}
+.note-advanced-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 15px 15px}
+.note-advanced-grid label:nth-child(3){grid-column:1/-1}
+.note-advanced-grid textarea{min-height:90px}
+.note-flow-hint{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px;color:#4e545b;font:8px ui-monospace,monospace;letter-spacing:.12em;flex-wrap:wrap}
+.note-flow-hint span:first-child,.note-flow-hint span:last-child{color:#e5ff00}
+.note-flow-hint i{font-style:normal;color:#34393f}
+@media(max-width:650px){
+  #modal .modal-card:has(.note-compose){width:calc(100vw - 16px);max-height:92vh}
+  .note-core-grid,.note-advanced-grid{grid-template-columns:1fr}
+  .note-advanced-grid label:nth-child(3){grid-column:auto}
+  .note-core-grid textarea{min-height:105px}
+  .note-compose-intro h3{font-size:21px}
+}
