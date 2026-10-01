@@ -67,7 +67,7 @@
     const hours=Math.round(db.sessions.reduce((a,x)=>a+(Number(x.minutes)||0),0)/60*10)/10;
     const weak=db.reviews.filter(r=>r.status==='pending'&&r.date<=d).length;
     shell().innerHTML=
-      '<div class="hero"><div><span class="eyebrow">PERSONAL LEARNING SYSTEM</span><h1>Good morning, Jessie.</h1><p>Learn → Understand → Record → Test → Review → Master.</p></div><div class="hero-art"><img src="jessie-academy.webp" alt="Jessie Academy artwork"><span>NEON<br>GUIDE</span></div></div>'+
+      '<div class="hero"><div><span class="eyebrow">PERSONAL LEARNING SYSTEM</span><h1>Good morning, Jessie.</h1><p>Learn → Understand → Record → Test → Review → Master.</p></div><div class="hero-art"><img src="jessie-academy.svg" alt="Jessie Academy artwork"><span>NEON<br>GUIDE</span></div></div>'+
       '<div class="stats">'+stat('Today’s learning',tasks.length,studied+' completed','◫')+stat('Study time',hours+'h','recorded sessions','◴')+stat('Knowledge notes',notes,'saved permanently','◇')+stat('Assessments',exams,weak+' reviews due','⚡')+'</div>'+
       '<div class="grid-2">'+
       panel('Today’s Learning', tasks.length?'<div class="agenda">'+tasks.map(taskRow).join('')+'</div>':'<div class="empty">No tasks today. Add one from the calendar.</div>','<button class="ghost" data-action="add-task">+ Add task</button>')+
