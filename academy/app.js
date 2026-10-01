@@ -229,6 +229,8 @@
   function reviewDone(id){const r=byId(db.reviews,id);if(r){r.status='done';r.completed=today();save();renderReview();toast('Review recorded.')}}
 
   document.addEventListener('click',e=>{
+    const viewBtn=e.target.closest('[data-view]');
+    if(viewBtn){setView(viewBtn.dataset.view);return}
     const b=e.target.closest('[data-action]'); if(b){const a=b.dataset.action,id=b.dataset.id;
       if(a==='add-task')addTask(b.dataset.date||today());
       else if(a==='open-task')openTask(id);
